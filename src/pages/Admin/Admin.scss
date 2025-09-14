@@ -1,0 +1,30 @@
+.admin-dashboard {
+  .stats-row {
+    margin-bottom: 24px;
+
+    .stat-extra {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+  }
+
+  .charts-row {
+    margin-bottom: 24px;
+  }
+
+  .no-data {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    color: #999;
+    font-size: 16px;
+  }
+}
+
+.admin-users, .admin-todos, .admin-reports {
+  .filters-card {
+    margin-bottom: 24px;
+  }
+}

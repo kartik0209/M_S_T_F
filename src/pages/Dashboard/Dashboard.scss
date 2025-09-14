@@ -1,0 +1,39 @@
+.dashboard {
+  .stats-row {
+    margin-bottom: 24px;
+  }
+
+  .progress-row {
+    margin-bottom: 24px;
+  }
+
+  .charts-row {
+    margin-bottom: 24px;
+  }
+
+  .todos-row {
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+    }
+  }
+
+  .no-data {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    color: #999;
+    font-size: 16px;
+  }
+}
