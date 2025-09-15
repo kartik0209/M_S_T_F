@@ -36,7 +36,7 @@ const Layout = () => {
 
     { type: 'divider' },
     {
-      key: '3',
+      key: '2',
       icon: <LogoutOutlined />,
       label: 'Logout',
       onClick: logout

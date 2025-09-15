@@ -1,43 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
+  Modal,
   Button,
   Form,
   Input,
   Select,
   DatePicker,
   message,
-  Typography,
   Space,
-  Divider
+  Avatar,
+  Spin
 } from 'antd';
-import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
+import { PlusOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
 import apiService from '../../services/api';
 import dayjs from 'dayjs';
 
-const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-const AdminTaskAssignment = () => {
+const AdminTaskAssignment = ({ visible, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(true);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (visible) {
+      fetchUsers();
+    }
+  }, [visible]);
 
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
-      const response = await apiService.getUsersForAssignment();
+      const response = await apiService.getUsers(); // Use your existing method
       if (response.success) {
-        setUsers(response.data.users);
+        // Filter out admin users, only show regular users
+        const regularUsers = response.data.users.filter(user => user.role !== 'admin');
+        setUsers(regularUsers);
       }
     } catch (error) {
       message.error('Failed to fetch users');
+      console.error('Fetch users error:', error);
     } finally {
       setUsersLoading(false);
     }
@@ -47,9 +51,12 @@ const AdminTaskAssignment = () => {
     try {
       setLoading(true);
       const taskData = {
-        ...values,
+        title: values.title,
+        description: values.description || '',
         dueDate: values.dueDate.toISOString(),
-        userId: values.assignToUserId
+        category: values.category,
+        priority: values.priority,
+        userId: values.assignToUserId, // User to assign task to
       };
 
       const response = await apiService.assignTodoToUser(taskData);
@@ -57,134 +64,159 @@ const AdminTaskAssignment = () => {
       if (response.success) {
         message.success('Task assigned successfully');
         form.resetFields();
+        onSuccess(); // Call success callback
       }
     } catch (error) {
-      message.error('Failed to assign task');
+      message.error(error.response?.data?.message || 'Failed to assign task');
+      console.error('Assign task error:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    form.resetFields();
+    onClose();
+  };
+
   return (
-    <div className="admin-task-assignment">
-      <Card 
-        title={
-          <Space>
-            <UserAddOutlined />
-            <Title level={4} style={{ margin: 0 }}>Assign Task to User</Title>
-          </Space>
-        }
-        style={{ maxWidth: 600, margin: '0 auto' }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleAssignTask}
-          initialValues={{
-            priority: 'Medium',
-            category: 'Work'
-          }}
+    <Modal
+      title={
+        <Space>
+          <UserAddOutlined />
+          <span>Assign Task to User</span>
+        </Space>
+      }
+      open={visible}
+      onCancel={handleCancel}
+      footer={[
+        <Button key="cancel" onClick={handleCancel}>
+          Cancel
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          loading={loading}
+          onClick={() => form.submit()}
+          icon={<PlusOutlined />}
         >
-          <Form.Item
-            name="assignToUserId"
-            label="Assign To User"
-            rules={[{ required: true, message: 'Please select a user!' }]}
+          Assign Task
+        </Button>
+      ]}
+      width={600}
+      destroyOnClose
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleAssignTask}
+        initialValues={{
+          priority: 'Medium',
+          category: 'Work'
+        }}
+      >
+        <Form.Item
+          name="assignToUserId"
+          label="Assign To User"
+          rules={[{ required: true, message: 'Please select a user!' }]}
+        >
+          <Select
+            placeholder="Select user to assign task"
+            loading={usersLoading}
+            showSearch
+            optionFilterProp="children"
+            notFoundContent={usersLoading ? <Spin size="small" /> : 'No users found'}
+            filterOption={(input, option) =>
+              option.children.props.children[1].props.children[0].props.children
+                .toLowerCase()
+                .indexOf(input.toLowerCase()) >= 0
+            }
           >
-            <Select
-              placeholder="Select user to assign task"
-              loading={usersLoading}
-              showSearch
-              optionFilterProp="children"
-            >
-              {users.map(user => (
-                <Option key={user._id} value={user._id}>
-                  <Space>
-                    {user.username} ({user.email})
-                  </Space>
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
+            {users.map(user => (
+              <Option key={user._id} value={user._id}>
+                <Space>
+                  <Avatar 
+                    src={user.profileImage} 
+                    icon={<UserOutlined />} 
+                    size="small" 
+                  />
+                  <div>
+                    <div>{user.username}</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      {user.email}
+                    </div>
+                  </div>
+                </Space>
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-          <Form.Item
-            name="title"
-            label="Task Title"
-            rules={[
-              { required: true, message: 'Please enter task title!' },
-              { max: 100, message: 'Title cannot exceed 100 characters!' }
-            ]}
-          >
-            <Input placeholder="Enter task title" />
-          </Form.Item>
+        <Form.Item
+          name="title"
+          label="Task Title"
+          rules={[
+            { required: true, message: 'Please enter task title!' },
+            { max: 100, message: 'Title cannot exceed 100 characters!' }
+          ]}
+        >
+          <Input placeholder="Enter task title" />
+        </Form.Item>
 
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[
-              { max: 500, message: 'Description cannot exceed 500 characters!' }
-            ]}
-          >
-            <TextArea
-              rows={3}
-              placeholder="Enter task description (optional)"
-            />
-          </Form.Item>
+        <Form.Item
+          name="description"
+          label="Description"
+          rules={[
+            { max: 500, message: 'Description cannot exceed 500 characters!' }
+          ]}
+        >
+          <TextArea
+            rows={3}
+            placeholder="Enter task description (optional)"
+          />
+        </Form.Item>
 
-          <Form.Item
-            name="dueDate"
-            label="Due Date"
-            rules={[{ required: true, message: 'Please select due date!' }]}
-          >
-            <DatePicker
-              showTime
-              format="YYYY-MM-DD HH:mm"
-              style={{ width: '100%' }}
-              disabledDate={(current) => current && current < dayjs().startOf('day')}
-            />
-          </Form.Item>
+        <Form.Item
+          name="dueDate"
+          label="Due Date"
+          rules={[{ required: true, message: 'Please select due date!' }]}
+        >
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm"
+            style={{ width: '100%' }}
+            disabledDate={(current) => current && current < dayjs().startOf('day')}
+          />
+        </Form.Item>
 
-          <Form.Item
-            name="category"
-            label="Category"
-            rules={[{ required: true, message: 'Please select category!' }]}
-          >
-            <Select>
-              <Option value="Work">Work</Option>
-              <Option value="Personal">Personal</Option>
-              <Option value="Health">Health</Option>
-              <Option value="Education">Education</Option>
-              <Option value="Shopping">Shopping</Option>
-              <Option value="Other">Other</Option>
-            </Select>
-          </Form.Item>
+        <Form.Item
+          name="category"
+          label="Category"
+          rules={[{ required: true, message: 'Please select category!' }]}
+        >
+          <Select>
+            <Option value="Work">Work</Option>
+            <Option value="Personal">Personal</Option>
+            <Option value="Health">Health</Option>
+            <Option value="Education">Education</Option>
+            <Option value="Shopping">Shopping</Option>
+            <Option value="Other">Other</Option>
+          </Select>
+        </Form.Item>
 
-          <Form.Item
-            name="priority"
-            label="Priority"
-            rules={[{ required: true, message: 'Please select priority!' }]}
-          >
-            <Select>
-              <Option value="High">High</Option>
-              <Option value="Medium">Medium</Option>
-              <Option value="Low">Low</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              icon={<PlusOutlined />}
-              size="large"
-              block
-            >
-              Assign Task
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
+        <Form.Item
+          name="priority"
+          label="Priority"
+          rules={[{ required: true, message: 'Please select priority!' }]}
+        >
+          <Select>
+            <Option value="High">High</Option>
+            <Option value="Medium">Medium</Option>
+            <Option value="Low">Low</Option>
+          </Select>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 

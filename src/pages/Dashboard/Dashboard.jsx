@@ -1,27 +1,38 @@
-import { useState, useEffect } from 'react';
-import { 
-  Row, 
-  Col, 
-  Card, 
-  Statistic, 
-  Button, 
-  message, 
-  Spin, 
+import { useState, useEffect } from "react";
+import {
+  Row,
+  Col,
+  Card,
+  Statistic,
+  Button,
+  message,
+  Spin,
   Typography,
-  Progress 
-} from 'antd';
-import { 
-  PlusOutlined, 
+  Progress,
+} from "antd";
+import {
+  PlusOutlined,
   UnorderedListOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  CalendarOutlined 
-} from '@ant-design/icons';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import apiService from '../../services/api';
-import TodoForm from '../../components/Todo/TodoForm';
-import TodoList from '../../components/Todo/TodoList';
-import './Dashboard.scss';
+  CalendarOutlined,
+} from "@ant-design/icons";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
+import apiService from "../../services/api";
+import TodoForm from "../../components/Todo/TodoForm";
+import TodoList from "../../components/Todo/TodoList";
+import "./Dashboard.scss";
 
 const { Title } = Typography;
 
@@ -44,13 +55,13 @@ const Dashboard = () => {
       const [statsResponse, todosResponse, todayResponse] = await Promise.all([
         apiService.getUserStats(),
         apiService.getTodos({ limit: 5 }),
-        apiService.getTodaysTodos()
+        apiService.getTodaysTodos(),
       ]);
 
       if (statsResponse.success) {
         setStats(statsResponse.data);
       }
-      
+
       if (todosResponse.success) {
         setRecentTodos(todosResponse.data.todos);
       }
@@ -59,7 +70,7 @@ const Dashboard = () => {
         setTodayTodos(todayResponse.data.todos);
       }
     } catch {
-      message.error('Failed to fetch dashboard data');
+      message.error("Failed to fetch dashboard data");
     } finally {
       setLoading(false);
     }
@@ -70,11 +81,11 @@ const Dashboard = () => {
       setActionLoading(true);
       const response = await apiService.createTodo(todoData);
       if (response.success) {
-        message.success('Todo created successfully');
+        message.success("Todo created successfully");
         fetchDashboardData();
       }
     } catch {
-      message.error('Failed to create todo');
+      message.error("Failed to create todo");
     } finally {
       setActionLoading(false);
     }
@@ -90,12 +101,12 @@ const Dashboard = () => {
       setActionLoading(true);
       const response = await apiService.updateTodo(selectedTodo._id, todoData);
       if (response.success) {
-        message.success('Todo updated successfully');
+        message.success("Todo updated successfully");
         fetchDashboardData();
         setSelectedTodo(null);
       }
     } catch {
-      message.error('Failed to update todo');
+      message.error("Failed to update todo");
     } finally {
       setActionLoading(false);
     }
@@ -106,11 +117,11 @@ const Dashboard = () => {
       setActionLoading(true);
       const response = await apiService.deleteTodo(todoId);
       if (response.success) {
-        message.success('Todo deleted successfully');
+        message.success("Todo deleted successfully");
         fetchDashboardData();
       }
     } catch {
-      message.error('Failed to delete todo');
+      message.error("Failed to delete todo");
     } finally {
       setActionLoading(false);
     }
@@ -121,11 +132,11 @@ const Dashboard = () => {
       setActionLoading(true);
       const response = await apiService.updateTodo(todoId, updateData);
       if (response.success) {
-        message.success('Todo status updated');
+        message.success("Todo status updated");
         fetchDashboardData();
       }
     } catch {
-      message.error('Failed to update todo status');
+      message.error("Failed to update todo status");
     } finally {
       setActionLoading(false);
     }
@@ -141,41 +152,37 @@ const Dashboard = () => {
 
   let completionRate = 0;
   if (stats?.summary?.total > 0) {
-    completionRate = Math.round((stats.summary.completed / stats.summary.total) * 100);
+    completionRate = Math.round(
+      (stats.summary.completed / stats.summary.total) * 100
+    );
   }
 
-  const categoryChartData = stats?.categoryStats?.map(item => ({
-    name: item._id,
-    value: item.count
-  })) || [];
-  const priorityChartData = stats?.priorityStats?.map(item => {
-    let fillColor;
-    if (item._id === 'High') {
-      fillColor = '#ff4d4f';
-    } else if (item._id === 'Medium') {
-      fillColor = '#faad14';
-    } else {
-      fillColor = '#52c41a';
-// Removed unused handleGroupChange function
-    setLoading(true);
-    const response = await apiService.getTodosByGroup(group);
-    if (response.success) {
-      setTodos(response.data.todos);
-    }
-  } catch (error) {
-    message.error('Failed to fetch grouped todos');
-  } finally {
-    setLoading(false);
-  }
-};
+  const categoryChartData =
+    stats?.categoryStats?.map((item) => ({
+      name: item._id,
+      value: item.count,
+    })) || [];
+  const priorityChartData =
+    stats?.priorityStats?.map((item) => {
+      let fillColor;
+      if (item._id === "High") {
+        fillColor = "#ff4d4f";
+      } else if (item._id === "Medium") {
+        fillColor = "#faad14";
+      } else {
+        fillColor = "#52c41a";
+      }
+      return { name: item._id, value: item.count, fill: fillColor };
+    }) || [];
 
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <Title level={2}>Dashboard</Title>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<PlusOutlined />}
           onClick={() => setTodoFormOpen(true)}
           size="large"
@@ -201,7 +208,7 @@ const Dashboard = () => {
               title="Completed"
               value={stats?.summary?.completed || 0}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
@@ -211,7 +218,7 @@ const Dashboard = () => {
               title="Pending"
               value={stats?.summary?.pending || 0}
               prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              valueStyle={{ color: "#faad14" }}
             />
           </Card>
         </Col>
@@ -221,30 +228,31 @@ const Dashboard = () => {
               title="Overdue"
               value={stats?.summary?.overdue || 0}
               prefix={<ExclamationCircleOutlined />}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: "#cf1322" }}
             />
           </Card>
         </Col>
       </Row>
 
       {/* Completion Rate */}
+
       <Row gutter={[16, 16]} className="progress-row">
         <Col span={24}>
           <Card title="Completion Rate">
-            <Progress 
-              percent={completionRate} 
-            <Progress 
-              percent={completionRate} 
+            <Progress
+              percent={completionRate}
               status={
                 completionRate > 70
-                  ? 'success'
+                  ? "success"
                   : completionRate > 40
-                  ? 'normal'
-                  : 'exception'
+                  ? "normal"
+                  : "exception"
               }
               strokeWidth={12}
-              format={percent => `${percent}%`}
+              format={(percent) => `${percent}%`}
             />
+          </Card>
+        </Col>
       </Row>
 
       {/* Charts */}
@@ -259,14 +267,18 @@ const Dashboard = () => {
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    {categoryChartData.map((entry) => (
-                      <Cell key={entry.name} fill={COLORS[categoryChartData.findIndex(e => e.name === entry.name) % COLORS.length]} />
-                    ))}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label
                   >
                     {categoryChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
+
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
@@ -298,7 +310,10 @@ const Dashboard = () => {
       {/* Recent Todos and Today's Todos */}
       <Row gutter={[16, 16]} className="todos-row">
         <Col xs={24} lg={12}>
-          <Card title="Recent Todos" extra={<Button type="link">View All</Button>}>
+          <Card
+            title="Recent Todos"
+            extra={<Button type="link">View All</Button>}
+          >
             <TodoList
               todos={recentTodos}
               onEdit={handleEditTodo}
@@ -318,8 +333,8 @@ const Dashboard = () => {
               onStatusChange={handleStatusChange}
               loading={actionLoading}
             />
-            </Card>
-      {/* Todo Form Modal - Completed */}
+          </Card>
+          {/* Todo Form Modal - Completed */}
         </Col>
       </Row>
 

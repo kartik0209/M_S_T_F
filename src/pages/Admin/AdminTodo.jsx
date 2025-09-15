@@ -12,21 +12,31 @@ import {
   Pagination,
   Typography,
   Row,
-  Col
+  Col,
+  Modal,
+  Form,
+  DatePicker,
+  Descriptions,
+  Divider,
+  Dropdown
 } from 'antd';
 import {
   UserOutlined,
   SearchOutlined,
   EyeOutlined,
+  EditOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  DeleteOutlined,
+  MoreOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiService from '../../services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TextArea } = Input;
 
 const AdminTodos = () => {
   const [todos, setTodos] = useState([]);
@@ -43,6 +53,13 @@ const AdminTodos = () => {
     priority: '',
     userId: ''
   });
+
+  // Modal states
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedTodo, setSelectedTodo] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchTodos();
@@ -73,6 +90,7 @@ const AdminTodos = () => {
       }
     } catch (error) {
       message.error('Failed to fetch todos');
+      console.error('Fetch todos error:', error);
     } finally {
       setLoading(false);
     }
@@ -94,6 +112,76 @@ const AdminTodos = () => {
       category: '',
       priority: '',
       userId: ''
+    });
+  };
+
+  // View Todo Details
+  const handleViewTodo = (todo) => {
+    setSelectedTodo(todo);
+    setViewModalOpen(true);
+  };
+
+  // Edit Todo
+  const handleEditTodo = (todo) => {
+    setSelectedTodo(todo);
+    form.setFieldsValue({
+      title: todo.title,
+      description: todo.description,
+      category: todo.category,
+      priority: todo.priority,
+      status: todo.status || 'pending',
+      dueDate: todo.dueDate ? dayjs(todo.dueDate) : null,
+    });
+    setEditModalOpen(true);
+  };
+
+  // Update Todo
+  const handleUpdateTodo = async (values) => {
+    try {
+      setActionLoading(true);
+      const updateData = {
+        ...values,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : selectedTodo.dueDate,
+        completed: values.status === 'completed'
+      };
+
+      const response = await apiService.updateTodo(selectedTodo._id, updateData);
+      
+      if (response.success) {
+        message.success('Todo updated successfully');
+        setEditModalOpen(false);
+        setSelectedTodo(null);
+        form.resetFields();
+        fetchTodos();
+      }
+    } catch (error) {
+      message.error('Failed to update todo');
+      console.error('Update todo error:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete Todo
+  const handleDeleteTodo = (todoId, todoTitle) => {
+    Modal.confirm({
+      title: 'Delete Todo',
+      content: `Are you sure you want to delete "${todoTitle}"?`,
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          const response = await apiService.deleteTodo(todoId);
+          if (response.success) {
+            message.success('Todo deleted successfully');
+            fetchTodos();
+          }
+        } catch (error) {
+          message.error('Failed to delete todo');
+          console.error('Delete todo error:', error);
+        }
+      }
     });
   };
 
@@ -179,7 +267,7 @@ const AdminTodos = () => {
       key: 'status',
       render: (status) => (
         <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
-          {status.replace('-', ' ').toUpperCase()}
+          {(status || 'pending').replace('-', ' ').toUpperCase()}
         </Tag>
       ),
     },
@@ -224,18 +312,47 @@ const AdminTodos = () => {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => (
-        <Button
-          type="text"
-          icon={<EyeOutlined />}
-          onClick={() => {
-            // Show todo details in a modal
-            message.info('Todo details view would open here');
-          }}
-        >
-          View
-        </Button>
-      ),
+      width: 80,
+      render: (_, record) => {
+        const menuItems = [
+          {
+            key: 'view',
+            label: 'View Details',
+            icon: <EyeOutlined />,
+            onClick: () => handleViewTodo(record)
+          },
+          {
+            key: 'edit',
+            label: 'Edit',
+            icon: <EditOutlined />,
+            onClick: () => handleEditTodo(record)
+          },
+          {
+            type: 'divider'
+          },
+          {
+            key: 'delete',
+            label: 'Delete',
+            icon: <DeleteOutlined />,
+            onClick: () => handleDeleteTodo(record._id, record.title),
+            danger: true
+          }
+        ];
+
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              onClick={(e) => e.preventDefault()}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -338,6 +455,197 @@ const AdminTodos = () => {
           </div>
         )}
       </Card>
+
+      {/* View Todo Modal */}
+      <Modal
+        title="Todo Details"
+        open={viewModalOpen}
+        onCancel={() => {
+          setViewModalOpen(false);
+          setSelectedTodo(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setViewModalOpen(false);
+            setSelectedTodo(null);
+          }}>
+            Close
+          </Button>
+        ]}
+        width={700}
+      >
+        {selectedTodo && (
+          <div>
+            <Descriptions title={selectedTodo.title} bordered column={2}>
+              <Descriptions.Item label="Description" span={2}>
+                {selectedTodo.description || 'No description provided'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={getStatusColor(selectedTodo.status)} icon={getStatusIcon(selectedTodo.status)}>
+                  {(selectedTodo.status || 'pending').replace('-', ' ').toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Priority">
+                <Tag color={getPriorityColor(selectedTodo.priority)}>
+                  {selectedTodo.priority}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Category">
+                <Tag color={getCategoryColor(selectedTodo.category)}>
+                  {selectedTodo.category}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Due Date">
+                <span style={{ color: isOverdue(selectedTodo.dueDate, selectedTodo.status) ? '#ff4d4f' : 'inherit' }}>
+                  {dayjs(selectedTodo.dueDate).format('MMMM DD, YYYY HH:mm')}
+                  {isOverdue(selectedTodo.dueDate, selectedTodo.status) && (
+                    <Tag color="red" style={{ marginLeft: 8 }}>OVERDUE</Tag>
+                  )}
+                </span>
+              </Descriptions.Item>
+              <Descriptions.Item label="Assigned To">
+                <Space>
+                  <Avatar src={selectedTodo.userId?.profileImage} icon={<UserOutlined />} size="small" />
+                  <div>
+                    <div>{selectedTodo.userId?.username}</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>{selectedTodo.userId?.email}</div>
+                  </div>
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created">
+                {dayjs(selectedTodo.createdAt).format('MMMM DD, YYYY HH:mm')}
+              </Descriptions.Item>
+              <Descriptions.Item label="Last Updated">
+                {dayjs(selectedTodo.updatedAt).format('MMMM DD, YYYY HH:mm')}
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Todo Modal */}
+      <Modal
+        title="Edit Todo"
+        open={editModalOpen}
+        onCancel={() => {
+          setEditModalOpen(false);
+          setSelectedTodo(null);
+          form.resetFields();
+        }}
+        onOk={form.submit}
+        confirmLoading={actionLoading}
+        width={600}
+      >
+        {selectedTodo && (
+          <div>
+            <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f5f5f5', borderRadius: 6 }}>
+              <Space>
+                <Avatar src={selectedTodo.userId?.profileImage} icon={<UserOutlined />} />
+                <div>
+                  <Text strong>Assigned to: {selectedTodo.userId?.username}</Text>
+                  <div style={{ fontSize: '12px', color: '#666' }}>{selectedTodo.userId?.email}</div>
+                </div>
+              </Space>
+            </div>
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleUpdateTodo}
+            >
+              <Form.Item
+                name="title"
+                label="Title"
+                rules={[
+                  { required: true, message: 'Please enter todo title!' },
+                  { max: 100, message: 'Title cannot exceed 100 characters!' }
+                ]}
+              >
+                <Input placeholder="Enter todo title" />
+              </Form.Item>
+
+              <Form.Item
+                name="description"
+                label="Description"
+                rules={[
+                  { max: 500, message: 'Description cannot exceed 500 characters!' }
+                ]}
+              >
+                <TextArea
+                  rows={3}
+                  placeholder="Enter todo description"
+                />
+              </Form.Item>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="status"
+                    label="Status"
+                    rules={[{ required: true, message: 'Please select status!' }]}
+                  >
+                    <Select>
+                      <Option value="pending">Pending</Option>
+                      <Option value="in-progress">In Progress</Option>
+                      <Option value="completed">Completed</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="priority"
+                    label="Priority"
+                    rules={[{ required: true, message: 'Please select priority!' }]}
+                  >
+                    <Select>
+                      <Option value="High">High</Option>
+                      <Option value="Medium">Medium</Option>
+                      <Option value="Low">Low</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="category"
+                    label="Category"
+                    rules={[{ required: true, message: 'Please select category!' }]}
+                  >
+                    <Select>
+                      <Option value="Work">Work</Option>
+                      <Option value="Personal">Personal</Option>
+                      <Option value="Health">Health</Option>
+                      <Option value="Education">Education</Option>
+                      <Option value="Shopping">Shopping</Option>
+                      <Option value="Other">Other</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="dueDate"
+                    label="Due Date"
+                  >
+                    <DatePicker
+                      showTime
+                      format="YYYY-MM-DD HH:mm"
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
+          </div>
+        )}
+      </Modal>
+
+      <style jsx>{`
+        .overdue-row {
+          background-color: #fff2f0 !important;
+        }
+      `}</style>
     </div>
   );
 };

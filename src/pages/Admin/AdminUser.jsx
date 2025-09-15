@@ -47,6 +47,9 @@ const AdminUsers = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [form] = Form.useForm();
+const [viewModalOpen, setViewModalOpen] = useState(false);
+const [viewUserData, setViewUserData] = useState(null);
+const [viewLoading, setViewLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -119,47 +122,37 @@ const AdminUsers = () => {
     }
   };
 
-  const handleViewDetails = async (user) => {
-    // In a real app, you might navigate to a detailed view
-    // For now, we'll show a simple modal with user stats
-    try {
-      const response = await apiService.getUserDetails(user._id);
-      if (response.success) {
-        const { stats } = response.data;
-        Modal.info({
-          title: `${user.username} - User Details`,
-          width: 600,
-          content: (
-            <div>
-              <Row gutter={16} style={{ marginTop: 16 }}>
-                <Col span={6}>
-                  <Statistic title="Total Todos" value={stats.total} />
-                </Col>
-                <Col span={6}>
-                  <Statistic title="Completed" value={stats.completed} />
-                </Col>
-                <Col span={6}>
-                  <Statistic title="Pending" value={stats.pending} />
-                </Col>
-                <Col span={6}>
-                  <Statistic title="Overdue" value={stats.overdue} />
-                </Col>
-              </Row>
-              <div style={{ marginTop: 16 }}>
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Role:</strong> <Tag color={user.role === 'admin' ? 'red' : 'blue'}>{user.role}</Tag></p>
-                <p><strong>Status:</strong> <Tag color={user.isActive ? 'green' : 'red'}>{user.isActive ? 'Active' : 'Inactive'}</Tag></p>
-                <p><strong>Last Login:</strong> {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</p>
-                <p><strong>Joined:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
-              </div>
-            </div>
-          )
-        });
-      }
-    } catch (error) {
-      message.error('Failed to fetch user details');
+ const handleViewDetails = async (user) => {
+  try {
+    setViewLoading(true);
+    setViewModalOpen(true);
+    setViewUserData(user); // Set basic user data first
+    
+    // Try to fetch detailed stats
+    const response = await apiService.getUserDetails(user._id);
+    if (response.success && response.data.stats) {
+      setViewUserData(prev => ({
+        ...prev,
+        stats: response.data.stats
+      }));
+    } else {
+      // If API call fails, use the stats from the table data
+      setViewUserData(prev => ({
+        ...prev,
+        stats: user.stats || { total: 0, completed: 0, pending: 0, overdue: 0 }
+      }));
     }
-  };
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    // Use fallback data from table
+    setViewUserData(prev => ({
+      ...prev,
+      stats: user.stats || { total: 0, completed: 0, pending: 0, overdue: 0 }
+    }));
+  } finally {
+    setViewLoading(false);
+  }
+};
 
   const clearFilters = () => {
     setFilters({
@@ -387,6 +380,97 @@ const AdminUsers = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <Modal
+  title={`${viewUserData?.username || 'User'} - Details`}
+  open={viewModalOpen}
+  onCancel={() => {
+    setViewModalOpen(false);
+    setViewUserData(null);
+  }}
+  footer={[
+    <Button key="close" onClick={() => {
+      setViewModalOpen(false);
+      setViewUserData(null);
+    }}>
+      Close
+    </Button>
+  ]}
+  width={600}
+>
+  {viewUserData && (
+    <div>
+      {/* User Info Section */}
+      <div style={{ marginBottom: 24 }}>
+        <Space>
+          <Avatar src={viewUserData.profileImage} icon={<UserOutlined />} size="large" />
+          <div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{viewUserData.username}</div>
+            <div style={{ color: '#666' }}>{viewUserData.email}</div>
+            <Space style={{ marginTop: 4 }}>
+              <Tag color={viewUserData.role === 'admin' ? 'red' : 'blue'}>
+                {viewUserData.role?.toUpperCase()}
+              </Tag>
+              <Tag color={viewUserData.isActive ? 'green' : 'red'}>
+                {viewUserData.isActive ? 'Active' : 'Inactive'}
+              </Tag>
+            </Space>
+          </div>
+        </Space>
+      </div>
+
+      {/* Statistics Section */}
+      <div style={{ marginBottom: 24 }}>
+        <h4>Todo Statistics</h4>
+        {viewLoading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin />
+          </div>
+        ) : (
+          <Row gutter={16}>
+            <Col span={6}>
+              <Statistic 
+                title="Total Todos" 
+                value={viewUserData.stats?.total || 0} 
+              />
+            </Col>
+            <Col span={6}>
+              <Statistic 
+                title="Completed" 
+                value={viewUserData.stats?.completed || 0}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Col>
+            <Col span={6}>
+              <Statistic 
+                title="Pending" 
+                value={viewUserData.stats?.pending || 0}
+                valueStyle={{ color: '#faad14' }}
+              />
+            </Col>
+            <Col span={6}>
+              <Statistic 
+                title="Overdue" 
+                value={viewUserData.stats?.overdue || 0}
+                valueStyle={{ color: '#ff4d4f' }}
+              />
+            </Col>
+          </Row>
+        )}
+      </div>
+
+      {/* Additional Info Section */}
+      <div>
+        <h4>Account Information</h4>
+        <div style={{ marginLeft: 16 }}>
+          <p><strong>Last Login:</strong> {viewUserData.lastLogin ? new Date(viewUserData.lastLogin).toLocaleString() : 'Never'}</p>
+          <p><strong>Member Since:</strong> {new Date(viewUserData.createdAt).toLocaleDateString()}</p>
+          <p><strong>Account ID:</strong> {viewUserData._id}</p>
+        </div>
+      </div>
+    </div>
+  )}
+</Modal>
     </div>
   );
 };

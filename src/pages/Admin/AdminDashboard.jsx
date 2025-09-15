@@ -10,7 +10,8 @@ import {
   Table,
   Avatar,
   Progress,
-  Tag
+  Tag,
+  Button
 } from 'antd';
 import { 
   UserOutlined,
@@ -18,7 +19,8 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   CalendarOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import { 
   PieChart, 
@@ -37,13 +39,14 @@ import {
 } from 'recharts';
 import apiService from '../../services/api';
 import './Admin.scss';
+import AdminTaskAssignment from './AdminTaskAssignment';
 
 const { Title } = Typography;
 
 const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-
+const [taskAssignmentVisible, setTaskAssignmentVisible] = useState(false);
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -129,19 +132,23 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      <Title level={2}>Admin Dashboard</Title>
-
+  
       {/* Summary Statistics */}
       <Row gutter={[16, 16]} className="stats-row">
 
-          <Button 
-          type="primary" 
-          icon={<PlusOutlined />}
-          onClick={() => setTodoFormOpen(true)}
-          size="large"
-        >
-          Add Todo
-        </Button>
+      <Col span={24} style={{ marginBottom: 16 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Title level={2} style={{ margin: 0 }}>Admin Dashboard</Title>
+      <Button 
+        type="primary" 
+        icon={<PlusOutlined />}
+        onClick={() => setTaskAssignmentVisible(true)}
+        size="large"
+      >
+        Assign Task to User
+      </Button>
+    </div>
+  </Col>
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
@@ -313,6 +320,16 @@ const AdminDashboard = () => {
           </Card>
         </Col>
       </Row>
+
+
+      <AdminTaskAssignment 
+  visible={taskAssignmentVisible}
+  onClose={() => setTaskAssignmentVisible(false)}
+  onSuccess={() => {
+    setTaskAssignmentVisible(false);
+    fetchDashboardData(); // Refresh dashboard data
+  }}
+/>
     </div>
   );
 };

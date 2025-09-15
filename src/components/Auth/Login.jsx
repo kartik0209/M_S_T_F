@@ -81,17 +81,7 @@ const Login = () => {
           <Link to="/register">Sign up</Link>
         </div>
 
-        <div className="demo-credentials">
-          <Divider>Demo Credentials</Divider>
-          <div className="demo-section">
-            <Text strong>Admin:</Text>
-            <Text>admin@example.com / admin123</Text>
-          </div>
-          <div className="demo-section">
-            <Text strong>User:</Text>
-            <Text>user@example.com / user123</Text>
-          </div>
-        </div>
+       
       </Card>
     </div>
   );

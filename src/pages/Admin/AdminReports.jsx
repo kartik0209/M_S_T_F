@@ -14,7 +14,7 @@ import {
 import {
   UserOutlined,
   UnorderedListOutlined,
-
+  CheckCircleOutlined,
   BarChartOutlined
 } from '@ant-design/icons';
 import {
@@ -54,6 +54,7 @@ const AdminReports = () => {
       }
     } catch (error) {
       message.error('Failed to fetch reports');
+      console.error('Fetch reports error:', error);
     } finally {
       setLoading(false);
     }
@@ -61,14 +62,27 @@ const AdminReports = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '400px' 
+      }}>
         <Spin size="large" />
       </div>
     );
   }
 
   if (!reportData) {
-    return <div>No report data available</div>;
+    return (
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '40px', 
+        color: '#666' 
+      }}>
+        No report data available
+      </div>
+    );
   }
 
   const { userActivityReport, productivityTrends, performanceMetrics } = reportData;
@@ -92,9 +106,13 @@ const AdminReports = () => {
       key: 'username',
       render: (text, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Avatar icon={<UserOutlined />} size="small" />
+          <Avatar 
+            src={record.profileImage} 
+            icon={<UserOutlined />} 
+            size="small" 
+          />
           <div>
-            <div>{record.username}</div>
+            <div style={{ fontWeight: 500 }}>{record.username}</div>
             <div style={{ fontSize: '12px', color: '#666' }}>{record.email}</div>
           </div>
         </div>
@@ -113,6 +131,14 @@ const AdminReports = () => {
       key: 'completedTodos',
       align: 'center',
       sorter: (a, b) => a.completedTodos - b.completedTodos,
+      render: (completed, record) => (
+        <div>
+          <div>{completed}</div>
+          <div style={{ fontSize: '12px', color: '#52c41a' }}>
+            {record.totalTodos > 0 ? Math.round((completed / record.totalTodos) * 100) : 0}%
+          </div>
+        </div>
+      ),
     },
     {
       title: 'Recent Activity (7d)',
@@ -140,79 +166,79 @@ const AdminReports = () => {
   ];
 
   return (
-    <div className="admin-reports">
-      <Title level={2}>Analytics & Reports</Title>
-      
-      <div style={{ marginBottom: 16, color: '#666' }}>
-        Generated at: {new Date(reportData.generatedAt).toLocaleString()}
+    <div className="admin-reports" style={{ padding: '0 24px' }}>
+      <div style={{ marginBottom: 24 }}>
+        <Title level={2} style={{ marginBottom: 8 }}>Analytics & Reports</Title>
+        <div style={{ color: '#666', fontSize: '14px' }}>
+          Generated at: {new Date(reportData.generatedAt || new Date()).toLocaleString()}
+        </div>
       </div>
 
       {/* Performance Metrics */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Total Users"
-              value={performanceMetrics.totalUsers}
-              prefix={<UserOutlined />}
+              value={performanceMetrics?.totalUsers || 0}
+              prefix={<UserOutlined style={{ color: '#1890ff' }} />}
+              valueStyle={{ color: '#1890ff' }}
             />
             <div style={{ fontSize: '12px', color: '#666', marginTop: 8 }}>
-              {performanceMetrics.activeUsers} active users
+              {performanceMetrics?.activeUsers || 0} active users
             </div>
           </Card>
         </Col>
-        </Row>
         
-<Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable>
             <Statistic
               title="Total Todos"
-              value={performanceMetrics.totalTodos}
-              prefix={<UnorderedListOutlined />}
+              value={performanceMetrics?.totalTodos || 0}
+              prefix={<UnorderedListOutlined style={{ color: '#722ed1' }} />}
+              valueStyle={{ color: '#722ed1' }}
             />
+            <div style={{ fontSize: '12px', color: '#666', marginTop: 8 }}>
+              All time todos created
+            </div>
           </Card>
         </Col>
         
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card hoverable>
             <Statistic
               title="Completion Rate"
-              value={performanceMetrics.completionRate}
+              value={performanceMetrics?.completionRate || 0}
               suffix="%"
+              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
               valueStyle={{ color: '#52c41a' }}
             />
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Avg Tasks/User (7d)"
-              value={performanceMetrics.avgTasksLast7Days}
-              precision={1}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-
-   
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Total Users"
-              value={performanceMetrics.totalUsers}
-              prefix={<UserOutlined />}
-            />
             <div style={{ fontSize: '12px', color: '#666', marginTop: 8 }}>
-              {performanceMetrics.activeUsers} active users
+              Overall completion rate
             </div>
           </Card>
         </Col>
+
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable>
+            <Statistic
+              title="Avg Tasks/User (7d)"
+              value={performanceMetrics?.avgTasksLast7Days || 0}
+              precision={1}
+              prefix={<BarChartOutlined style={{ color: '#fa8c16' }} />}
+              valueStyle={{ color: '#fa8c16' }}
+            />
+            <div style={{ fontSize: '12px', color: '#666', marginTop: 8 }}>
+              Recent productivity
+            </div>
+          </Card>
+        </Col>
+      </Row>
 
       {/* Productivity Trends Chart */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={24}>
-          <Card title="Productivity Trends (Last 30 Days)">
+          <Card title="Productivity Trends (Last 30 Days)" hoverable>
             {trendData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={trendData}>
@@ -221,52 +247,46 @@ const AdminReports = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="total" stroke="#8884d8" strokeWidth={2} name="Total Tasks" />
-                  <Line type="monotone" dataKey="completed" stroke="#82ca9d" strokeWidth={2} name="Completed" />
-                  <Line type="monotone" dataKey="pending" stroke="#ffc658" strokeWidth={2} name="Pending" />
-                  <Line type="monotone" dataKey="inProgress" stroke="#ff7c7c" strokeWidth={2} name="In Progress" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="total" 
+                    stroke="#8884d8" 
+                    strokeWidth={2} 
+                    name="Total Tasks" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="completed" 
+                    stroke="#82ca9d" 
+                    strokeWidth={2} 
+                    name="Completed" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="pending" 
+                    stroke="#ffc658" 
+                    strokeWidth={2} 
+                    name="Pending" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="inProgress" 
+                    stroke="#ff7c7c" 
+                    strokeWidth={2} 
+                    name="In Progress" 
+                  />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="no-data">No trend data available</div>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '60px', 
+                color: '#999',
+                fontSize: '16px'
+              }}>
+                No trend data available
+              </div>
             )}
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Weekly Comparison */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={12}>
-          <Card title="This Week vs Last Week">
-            <Row gutter={16}>
-              <Col span={12}>
-                <Statistic
-                  title="This Week"
-                  value="New feature - coming soon"
-                  valueStyle={{ fontSize: '14px' }}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="Last Week"
-                  value="New feature - coming soon"
-                  valueStyle={{ fontSize: '14px' }}
-                />
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={12}>
-          <Card title="Average Tasks Added Per User (7 days)">
-            <Statistic
-              value={userActivityReport?.reduce((acc, user) => acc + user.recentActivity, 0) / Math.max(userActivityReport?.length || 1, 1)}
-              precision={1}
-              valueStyle={{ fontSize: '28px', color: '#1890ff' }}
-            />
-            <div style={{ marginTop: 8, color: '#666', fontSize: '14px' }}>
-              Based on {userActivityReport?.length || 0} active users
-            </div>
           </Card>
         </Col>
       </Row>
@@ -274,21 +294,28 @@ const AdminReports = () => {
       {/* Distribution Charts */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={12}>
-          <Card title="Task Status Distribution">
+          <Card title="Task Status Distribution" hoverable>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={[
-                    { name: 'Completed', value: performanceMetrics.completionRate, fill: '#52c41a' },
-                    { name: 'Incomplete', value: 100 - performanceMetrics.completionRate, fill: '#faad14' }
+                    { 
+                      name: 'Completed', 
+                      value: performanceMetrics?.completionRate || 0, 
+                      fill: '#52c41a' 
+                    },
+                    { 
+                      name: 'Incomplete', 
+                      value: 100 - (performanceMetrics?.completionRate || 0), 
+                      fill: '#faad14' 
+                    }
                   ]}
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${percent.toFixed(0)}%`}
-                >
-                </Pie>
+                />
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
@@ -296,11 +323,19 @@ const AdminReports = () => {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="User Engagement">
+          <Card title="User Engagement" hoverable>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={[
-                { name: 'Active Users', value: performanceMetrics.activeUsers, fill: '#52c41a' },
-                { name: 'Inactive Users', value: performanceMetrics.totalUsers - performanceMetrics.activeUsers, fill: '#ff4d4f' }
+                { 
+                  name: 'Active Users', 
+                  value: performanceMetrics?.activeUsers || 0, 
+                  fill: '#52c41a' 
+                },
+                { 
+                  name: 'Inactive Users', 
+                  value: (performanceMetrics?.totalUsers || 0) - (performanceMetrics?.activeUsers || 0), 
+                  fill: '#ff4d4f' 
+                }
               ]}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -313,18 +348,88 @@ const AdminReports = () => {
         </Col>
       </Row>
 
+      {/* Weekly Comparison */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} lg={12}>
+          <Card title="Weekly Comparison" hoverable>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic
+                  title="This Week"
+                  value="Coming Soon"
+                  valueStyle={{ fontSize: '16px', color: '#666' }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="Last Week"
+                  value="Coming Soon"
+                  valueStyle={{ fontSize: '16px', color: '#666' }}
+                />
+              </Col>
+            </Row>
+            <div style={{ 
+              marginTop: 16, 
+              padding: '12px', 
+              backgroundColor: '#f0f2f5', 
+              borderRadius: '6px',
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              Weekly comparison metrics will be available in future updates
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="Average Tasks Per User" hoverable>
+            <Statistic
+              value={userActivityReport?.length > 0 
+                ? (userActivityReport.reduce((acc, user) => acc + (user.recentActivity || 0), 0) / userActivityReport.length) 
+                : 0
+              }
+              precision={1}
+              valueStyle={{ fontSize: '28px', color: '#1890ff' }}
+              suffix="tasks/week"
+            />
+            <div style={{ marginTop: 12, color: '#666', fontSize: '14px' }}>
+              Based on {userActivityReport?.length || 0} users (last 7 days)
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
       {/* User Activity Report */}
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card title="User Activity Report" extra="Top 20 Most Active Users">
-            <Table
-              columns={userColumns}
-              dataSource={userActivityReport?.slice(0, 20)}
-              rowKey="_id"
-              pagination={false}
-              size="small"
-              scroll={{ x: 800 }}
-            />
+          <Card 
+            title="User Activity Report" 
+            extra={
+              <Tag color="blue">
+                Top {Math.min(userActivityReport?.length || 0, 20)} Most Active Users
+              </Tag>
+            }
+            hoverable
+          >
+            {userActivityReport?.length > 0 ? (
+              <Table
+                columns={userColumns}
+                dataSource={userActivityReport.slice(0, 20)}
+                rowKey="_id"
+                pagination={false}
+                size="small"
+                scroll={{ x: 800 }}
+              />
+            ) : (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px', 
+                color: '#999',
+                fontSize: '16px'
+              }}>
+                No user activity data available
+              </div>
+            )}
           </Card>
         </Col>
       </Row>

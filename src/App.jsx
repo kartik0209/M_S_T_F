@@ -34,7 +34,7 @@ const ProtectedRoute = ({ children }) => {
 
 const AdminRoute = ({ children }) => {
   const { user } = useAuth();
-  return user && user.role === "admin" ? children : <Navigate to="/" />;
+  return user && user.role === "admin" ? children : <Navigate to="/admin" />;
 };
 
 const PublicRoute = ({ children }) => {
@@ -42,7 +42,9 @@ const PublicRoute = ({ children }) => {
   return !user ? children : <Navigate to="/" />;
 };
 
+
 function AppContent() {
+   const { user } = useAuth(); // get role info here
   return (
     <Router>
       <Routes>
@@ -70,7 +72,12 @@ function AppContent() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+        <Route
+            index
+            element={
+              user?.role === "admin" ? <Navigate to="/admin" /> : <Dashboard />
+            }
+          />
           <Route path="todos" element={<AllTodos />} />
           <Route path="today" element={<TodayTodos />} />
           <Route path="completed" element={<CompletedTodos />} />

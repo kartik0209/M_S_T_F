@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL =  'http://localhost:5000/api';
+const API_BASE_URL =  'https://m-s-t-b.onrender.com/api';
 
 class ApiService {
   constructor() {
@@ -127,15 +127,29 @@ class ApiService {
   }
 // Admin assignment functionality
 async assignTodoToUser(todoData) {
-  const response = await this.api.post('/admin/assign-todo', todoData);
+  const response = await this.api.post('/todos/assign', todoData);
   return response.data;
 }
 
-// Get users for assignment dropdown
+// Get users for assignment dropdow
+// 
+// Replace the existing admin methods in your ApiService class with these updated ones:
+
+// Admin assignment functionality - UPDATE THIS METHOD
+
+
+// Get users for assignment dropdown - UPDATE THIS METHOD
 async getUsersForAssignment() {
-  const response = await this.api.get('/admin/users-for-assignment');
+  const response = await this.api.get('/admin/users'); // Use existing endpoint
   return response.data;
 }
+
+// Add this new method for getting all users (simpler version)
+async getUsers(params = {}) {
+  const response = await this.api.get('/admin/users', { params });
+  return response.data;
+}
+
 
 // Get todos by group (enhanced grouping)
 async getTodosByGroup(group) {
