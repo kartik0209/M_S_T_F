@@ -110,14 +110,7 @@ const OverdueTodos = () => {
             Tasks that have passed their due date
           </Text>
         </div>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />}
-          onClick={() => setTodoFormOpen(true)}
-          size="large"
-        >
-          Add Todo
-        </Button>
+     
       </div>
 
       {todos.length > 0 && (

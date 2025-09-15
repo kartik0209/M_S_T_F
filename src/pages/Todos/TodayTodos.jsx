@@ -113,14 +113,7 @@ const TodayTodos = () => {
             {todos.length} tasks today • {completedCount} completed • {pendingCount} remaining
           </Text>
         </div>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />}
-          onClick={() => setTodoFormOpen(true)}
-          size="large"
-        >
-          Add Todo
-        </Button>
+     
       </div>
 
       {loading ? (
