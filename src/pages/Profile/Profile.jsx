@@ -23,7 +23,7 @@ import {
   SaveOutlined,
   CameraOutlined
 } from '@ant-design/icons';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/authContext';
 import apiService from '../../services/api';
 import './Profile.scss';
 
