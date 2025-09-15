@@ -166,9 +166,7 @@ const Layout = () => {
                 />
                 <div>
                   <Text>{user?.username}</Text>
-                  {user?.role === 'admin' && (
-                    <div style={{ fontSize: '10px', color: '#666' }}>Admin</div>
-                  )}
+                 
                 </div>
               </Space>
             </Dropdown>

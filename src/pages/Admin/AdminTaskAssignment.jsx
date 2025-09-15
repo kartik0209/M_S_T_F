@@ -115,42 +115,39 @@ const AdminTaskAssignment = ({ visible, onClose, onSuccess }) => {
           category: 'Work'
         }}
       >
-        <Form.Item
-          name="assignToUserId"
-          label="Assign To User"
-          rules={[{ required: true, message: 'Please select a user!' }]}
-        >
-          <Select
-            placeholder="Select user to assign task"
-            loading={usersLoading}
-            showSearch
-            optionFilterProp="children"
-            notFoundContent={usersLoading ? <Spin size="small" /> : 'No users found'}
-            filterOption={(input, option) =>
-              option.children.props.children[1].props.children[0].props.children
-                .toLowerCase()
-                .indexOf(input.toLowerCase()) >= 0
-            }
-          >
-            {users.map(user => (
-              <Option key={user._id} value={user._id}>
-                <Space>
-                  <Avatar 
-                    src={user.profileImage} 
-                    icon={<UserOutlined />} 
-                    size="small" 
-                  />
-                  <div>
-                    <div>{user.username}</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      {user.email}
-                    </div>
-                  </div>
-                </Space>
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
+     <Form.Item
+  name="assignToUserId"
+  label="Assign To User"
+  rules={[{ required: true, message: "Please select a user!" }]}
+>
+  <Select
+    placeholder="Select user to assign task"
+    loading={usersLoading}
+    showSearch
+    optionFilterProp="children"
+    notFoundContent={usersLoading ? <Spin size="small" /> : "No users found"}
+    optionLabelProp="label"  // 👈 only show username after selection
+    filterOption={(input, option) =>
+      option?.label?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+    }
+  >
+    {users.map((user) => (
+      <Option
+        key={user._id}
+        value={user._id}
+        label={user.username} // 👈 define what should be displayed after selection
+      >
+        <Space>
+          <Avatar src={user.profileImage} icon={<UserOutlined />} size="small" />
+          <div>
+            <div>{user.username}</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>{user.email}</div>
+          </div>
+        </Space>
+      </Option>
+    ))}
+  </Select>
+</Form.Item>
 
         <Form.Item
           name="title"
