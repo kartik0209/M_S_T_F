@@ -33,7 +33,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiService from '../../services/api';
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+
 
 const { Title, Text } = Typography;
 const { Option } = Select;
