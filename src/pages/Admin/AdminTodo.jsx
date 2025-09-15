@@ -141,6 +141,38 @@ const handleDragEnd = async (result) => {
 };
 
 
+// when dragging starts
+const handleDragStart = (e, todoId) => {
+  e.dataTransfer.setData("todoId", todoId);
+};
+
+// allow dropping
+const handleDragOver = (e) => {
+  e.preventDefault(); // must prevent default
+};
+
+// when dropped
+const handleDrop = async (e, newStatus) => {
+  e.preventDefault();
+  const todoId = e.dataTransfer.getData("todoId");
+
+  if (!todoId) return;
+
+  // Optimistic update
+  setTodos(prev =>
+    prev.map(todo =>
+      todo._id === todoId ? { ...todo, status: newStatus } : todo
+    )
+  );
+
+  // Call API
+  const success = await onStatusChange(todoId, { status: newStatus });
+  if (!success) {
+    fetchTodos(); // revert if failed
+  }
+};
+
+
 const onStatusChange = async (todoId, updateData) => {
   try {
     const response = await apiService.updateTodo(todoId, updateData);
@@ -425,101 +457,86 @@ const onStatusChange = async (todoId, updateData) => {
 
 
 
- const renderBoardView = () => {
+const renderBoardView = () => {
   const statuses = ["pending", "in-progress", "completed"];
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Row gutter={16} style={{ marginTop: 16 }}>
-        {statuses.map((status) => (
-          <Col span={8} key={status}>
-            <Droppable droppableId={status}>
-              {(provided, snapshot) => (
+    <Row gutter={16} style={{ marginTop: 16 }}>
+      {statuses.map((status) => (
+        <Col span={8} key={status}>
+          <Card
+            title={status.replace("-", " ").toUpperCase()}
+            bordered
+            style={{
+              minHeight: "70vh",
+              background: "#fafafa",
+            }}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, status)}
+          >
+            {todos
+              .filter((todo) => (todo.status || "pending") === status)
+              .map((todo) => (
                 <Card
-                  title={status.replace("-", " ").toUpperCase()}
-                  bordered
+                  key={todo._id}
+                  size="small"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, todo._id)}
                   style={{
-                    minHeight: "70vh",
-                    background: snapshot.isDraggingOver ? "#f0f5ff" : "white",
+                    marginBottom: 12,
+                    borderRadius: 8,
+                    cursor: "grab",
+                    background: "white",
                   }}
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
+                  actions={[
+                    <EyeOutlined key="view" onClick={() => handleViewTodo(todo)} />,
+                    <EditOutlined key="edit" onClick={() => handleEditTodo(todo)} />,
+                    <DeleteOutlined
+                      key="delete"
+                      onClick={() => handleDeleteTodo(todo._id, todo.title)}
+                    />,
+                  ]}
                 >
-                  {todos
-                    .filter((todo) => (todo.status || "pending") === status)
-                    .map((todo, index) => (
-                      <Draggable
-                        key={todo._id}
-                        draggableId={todo._id}
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <Card
-                            size="small"
-                            style={{
-                              marginBottom: 12,
-                              borderRadius: 8,
-                              background: snapshot.isDragging
-                                ? "#e6f7ff"
-                                : "white",
-                            }}
-                            actions={[
-                              <EyeOutlined key="view" onClick={() => handleViewTodo(todo)} />,
-                              <EditOutlined key="edit" onClick={() => handleEditTodo(todo)} />,
-                              <DeleteOutlined
-                                key="delete"
-                                onClick={() => handleDeleteTodo(todo._id, todo.title)}
-                              />,
-                            ]}
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                          >
-                            <Card.Meta
-                              avatar={
-                                <Avatar
-                                  src={todo.userId?.profileImage}
-                                  icon={<UserOutlined />}
-                                />
-                              }
-                              title={
-                                <div>
-                                  {todo.title}
-                                  {isOverdue(todo.dueDate, todo.status) && (
-                                    <Tag color="red" style={{ marginLeft: 8 }}>
-                                      OVERDUE
-                                    </Tag>
-                                  )}
-                                </div>
-                              }
-                              description={
-                                <div>
-                                  <Tag color={getPriorityColor(todo.priority)}>
-                                    {todo.priority}
-                                  </Tag>
-                                  <Tag color={getCategoryColor(todo.category)}>
-                                    {todo.category}
-                                  </Tag>
-                                  <div style={{ fontSize: 12, marginTop: 4 }}>
-                                    Due: {dayjs(todo.dueDate).format("MMM DD, YYYY")}
-                                  </div>
-                                </div>
-                              }
-                            />
-                          </Card>
+                  <Card.Meta
+                    avatar={
+                      <Avatar
+                        src={todo.userId?.profileImage}
+                        icon={<UserOutlined />}
+                      />
+                    }
+                    title={
+                      <div>
+                        {todo.title}
+                        {isOverdue(todo.dueDate, todo.status) && (
+                          <Tag color="red" style={{ marginLeft: 8 }}>
+                            OVERDUE
+                          </Tag>
                         )}
-                      </Draggable>
-                    ))}
-                  {provided.placeholder}
+                      </div>
+                    }
+                    description={
+                      <div>
+                        <Tag color={getPriorityColor(todo.priority)}>
+                          {todo.priority}
+                        </Tag>
+                        <Tag color={getCategoryColor(todo.category)}>
+                          {todo.category}
+                        </Tag>
+                        <div style={{ fontSize: 12, marginTop: 4 }}>
+                          Due: {dayjs(todo.dueDate).format("MMM DD, YYYY")}
+                        </div>
+                      </div>
+                    }
+                  />
                 </Card>
-              )}
-            </Droppable>
-          </Col>
-        ))}
-      </Row>
-    </DragDropContext>
+              ))}
+          </Card>
+        </Col>
+      ))}
+    </Row>
   );
 };
+
 
 
   return (

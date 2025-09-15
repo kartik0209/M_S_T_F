@@ -13,7 +13,6 @@
     "antd": "^5.27.3",
     "axios": "^1.12.2",
     "react": "^19.1.1",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",
     "recharts": "^3.2.0"

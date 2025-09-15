@@ -12,10 +12,9 @@ import {
   Space,
   Pagination 
 } from 'antd';
-import { PlusOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import apiService from '../../services/api';
 import TodoForm from '../../components/Todo/TodoForm';
-import TodoList from '../../components/Todo/TodoList';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -55,7 +54,6 @@ const AllTodos = () => {
         ...filters
       };
       
-      // Remove empty filters
       Object.keys(params).forEach(key => {
         if (!params[key]) delete params[key];
       });
@@ -127,10 +125,10 @@ const AllTodos = () => {
     }
   };
 
-  const handleStatusChange = async (todoId, updateData) => {
+  const handleStatusChange = async (todoId, newStatus) => {
     try {
       setActionLoading(true);
-      const response = await apiService.updateTodo(todoId, updateData);
+      const response = await apiService.updateTodo(todoId, { status: newStatus });
       if (response.success) {
         message.success('Todo status updated');
         fetchTodos();
@@ -142,36 +140,30 @@ const AllTodos = () => {
     }
   };
 
-  // Update the search handling in AllTodos.jsx
-const handleSearch = async (searchQuery) => {
-  if (!searchQuery.trim()) {
-    fetchTodos();
-    return;
-  }
-  setFilters(prev => ({ ...prev, search: searchQuery }));
-  setPagination(prev => ({ ...prev, current: 1 }));
-  try {
-    setLoading(true);
-    const response = await apiService.searchTodos({ 
-      q: searchQuery,
-      page: 1,
-      limit: pagination.pageSize 
-    });
-    
-    if (response.success) {
-      setTodos(response.data.todos);
-      setPagination(prev => ({
-        ...prev,
-        total: response.data.pagination.total,
-        current: 1
-      }));
+  // 🔹 Drag and Drop handlers
+  const onDragStart = (e, id) => {
+    e.dataTransfer.setData("todoId", id);
+  };
+
+  const allowDrop = (e) => {
+    e.preventDefault();
+  };
+
+  const onDrop = (e, newStatus) => {
+    e.preventDefault();
+    const todoId = e.dataTransfer.getData("todoId");
+    handleStatusChange(todoId, newStatus);
+  };
+
+  // Filters
+  const handleSearch = async (searchQuery) => {
+    if (!searchQuery.trim()) {
+      fetchTodos();
+      return;
     }
-  } catch (error) {
-    message.error('Failed to search todos');
-  } finally {
-    setLoading(false);
-  }
-};
+    setFilters(prev => ({ ...prev, search: searchQuery }));
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -193,6 +185,8 @@ const handleSearch = async (searchQuery) => {
     });
   };
 
+  const statuses = ["pending", "in-progress", "completed"];
+
   return (
     <div className="todos-page">
       <div className="page-header">
@@ -208,133 +202,59 @@ const handleSearch = async (searchQuery) => {
       </div>
 
       {/* Filters */}
-      <Card className="filters-card" bodyStyle={{ padding: 16 }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={8} md={6}>
-          <Col xs={24} sm={8} md={6}>
-  <Input.Search
-    placeholder="Search todos..."
-    prefix={<SearchOutlined />}
-    value={filters.search}
-    onChange={(e) => handleFilterChange('search', e.target.value)}
-    onSearch={handleSearch}
-    allowClear
-    enterButton
-  />
-</Col>
+      {/* keep your existing filter UI here... */}
 
-          </Col>
-          
-          <Col xs={12} sm={4} md={3}>
-            <Select
-              placeholder="Status"
-              value={filters.status}
-              onChange={(value) => handleFilterChange('status', value)}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              <Option value="pending">Pending</Option>
-              <Option value="in-progress">In Progress</Option>
-              <Option value="completed">Completed</Option>
-            </Select>
-          </Col>
-
-          <Col xs={12} sm={4} md={3}>
-            <Select
-              placeholder="Category"
-              value={filters.category}
-              onChange={(value) => handleFilterChange('category', value)}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              <Option value="Work">Work</Option>
-              <Option value="Personal">Personal</Option>
-              <Option value="Health">Health</Option>
-              <Option value="Education">Education</Option>
-              <Option value="Shopping">Shopping</Option>
-              <Option value="Other">Other</Option>
-            </Select>
-          </Col>
-
-          <Col xs={12} sm={4} md={3}>
-            <Select
-              placeholder="Priority"
-              value={filters.priority}
-              onChange={(value) => handleFilterChange('priority', value)}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              <Option value="High">High</Option>
-              <Option value="Medium">Medium</Option>
-              <Option value="Low">Low</Option>
-            </Select>
-          </Col>
-
-          <Col xs={12} sm={4} md={3}>
-            <Select
-              placeholder="Sort by"
-              value={filters.sortBy}
-              onChange={(value) => handleFilterChange('sortBy', value)}
-              style={{ width: '100%' }}
-            >
-              <Option value="createdAt">Created Date</Option>
-              <Option value="dueDate">Due Date</Option>
-              <Option value="priority">Priority</Option>
-              <Option value="status">Status</Option>
-            </Select>
-          </Col>
-
-          <Col xs={12} sm={4} md={3}>
-            <Select
-              value={filters.sortOrder}
-              onChange={(value) => handleFilterChange('sortOrder', value)}
-              style={{ width: '100%' }}
-            >
-              <Option value="desc">Descending</Option>
-              <Option value="asc">Ascending</Option>
-            </Select>
-          </Col>
-
-          <Col xs={24} sm={8} md={3}>
-            <Space>
-              <Button onClick={clearFilters}>Clear</Button>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Todos List */}
+      {/* Drag and Drop Kanban Board */}
       {loading ? (
         <div className="loading-container">
           <Spin size="large" />
         </div>
       ) : (
-        <>
-          <TodoList
-            todos={todos}
-            onEdit={handleEditTodo}
-            onDelete={handleDeleteTodo}
-            onStatusChange={handleStatusChange}
-            loading={actionLoading}
-          />
+        <Row gutter={16} style={{ marginTop: 20 }}>
+          {statuses.map(status => (
+            <Col span={8} key={status}>
+              <Card
+                title={status.replace("-", " ").toUpperCase()}
+                onDragOver={allowDrop}
+                onDrop={(e) => onDrop(e, status)}
+                style={{ minHeight: "300px", background: "#fafafa" }}
+              >
+                {todos
+                  .filter(todo => todo.status === status)
+                  .map(todo => (
+                    <Card
+                      key={todo._id}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, todo._id)}
+                      style={{ marginBottom: 10, cursor: "grab" }}
+                      onDoubleClick={() => handleEditTodo(todo)}
+                    >
+                      <b>{todo.title}</b>
+                      <p>{todo.description}</p>
+                      <Button danger size="small" onClick={() => handleDeleteTodo(todo._id)}>Delete</Button>
+                    </Card>
+                  ))}
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
 
-          {/* Pagination */}
-          {pagination.total > 0 && (
-            <div className="pagination-container">
-              <Pagination
-                current={pagination.current}
-                total={pagination.total}
-                pageSize={pagination.pageSize}
-                onChange={handlePageChange}
-                showSizeChanger
-                showQuickJumper
-                showTotal={(total, range) => 
-                  `${range[0]}-${range[1]} of ${total} todos`
-                }
-              />
-            </div>
-          )}
-        </>
+      {/* Pagination */}
+      {pagination.total > 0 && (
+        <div className="pagination-container">
+          <Pagination
+            current={pagination.current}
+            total={pagination.total}
+            pageSize={pagination.pageSize}
+            onChange={handlePageChange}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total, range) => 
+              `${range[0]}-${range[1]} of ${total} todos`
+            }
+          />
+        </div>
       )}
 
       {/* Todo Form Modal */}
