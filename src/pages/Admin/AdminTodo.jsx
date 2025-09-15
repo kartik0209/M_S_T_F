@@ -33,6 +33,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiService from '../../services/api';
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -60,6 +61,7 @@ const AdminTodos = () => {
   const [selectedTodo, setSelectedTodo] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [form] = Form.useForm();
+const [viewType, setViewType] = useState("table"); // "table" | "board"
 
   useEffect(() => {
     fetchTodos();
@@ -95,6 +97,71 @@ const AdminTodos = () => {
       setLoading(false);
     }
   };
+
+
+const handleDragEnd = async (result) => {
+  const { source, destination, draggableId } = result;
+  if (!destination) return;
+
+  const newStatus = destination.droppableId;
+  const oldStatus = source.droppableId;
+
+  // If the status didn't change, just reorder the items within the same list
+  if (newStatus === oldStatus) {
+    const items = Array.from(todos);
+    const [reorderedItem] = items.splice(source.index, 1);
+    items.splice(destination.index, 0, reorderedItem);
+    setTodos(items);
+    return;
+  }
+
+  // Filter the tasks to get the source list
+  const sourceTodos = todos.filter(todo => (todo.status || 'pending') === oldStatus);
+
+  // Get the dragged todo and remove it from the source list
+  const draggedTodo = sourceTodos.find(todo => todo._id === draggableId);
+  if (!draggedTodo) return;
+  
+  const newTodos = [...todos];
+  const draggedTodoIndex = newTodos.findIndex(todo => todo._id === draggableId);
+  
+  // Update the status of the dragged todo
+  newTodos[draggedTodoIndex] = { ...newTodos[draggedTodoIndex], status: newStatus };
+  
+  // Optimistically update the state for a smooth UI
+  setTodos(newTodos);
+
+  // Call the API to update the status on the backend
+  const success = await onStatusChange(draggableId, { status: newStatus });
+  
+  // If API call fails, revert the state
+  if (!success) {
+    setTodos(todos); // Revert to the original state
+  }
+};
+
+
+const onStatusChange = async (todoId, updateData) => {
+  try {
+    const response = await apiService.updateTodo(todoId, updateData);
+    if (response.success) {
+      // Update the local state to reflect the change
+      setTodos(prevTodos =>
+        prevTodos.map(todo =>
+          todo._id === todoId ? { ...todo, ...updateData } : todo
+        )
+      );
+      message.success("Task status updated!");
+      return true;
+    }
+    message.error("Failed to update task");
+    return false;
+  } catch (err) {
+    message.error("Failed to update task");
+    console.error("Update status error:", err);
+    return false;
+  }
+};
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -356,9 +423,126 @@ const AdminTodos = () => {
     },
   ];
 
+
+
+ const renderBoardView = () => {
+  const statuses = ["pending", "in-progress", "completed"];
+
+  return (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Row gutter={16} style={{ marginTop: 16 }}>
+        {statuses.map((status) => (
+          <Col span={8} key={status}>
+            <Droppable droppableId={status}>
+              {(provided, snapshot) => (
+                <Card
+                  title={status.replace("-", " ").toUpperCase()}
+                  bordered
+                  style={{
+                    minHeight: "70vh",
+                    background: snapshot.isDraggingOver ? "#f0f5ff" : "white",
+                  }}
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                >
+                  {todos
+                    .filter((todo) => (todo.status || "pending") === status)
+                    .map((todo, index) => (
+                      <Draggable
+                        key={todo._id}
+                        draggableId={todo._id}
+                        index={index}
+                      >
+                        {(provided, snapshot) => (
+                          <Card
+                            size="small"
+                            style={{
+                              marginBottom: 12,
+                              borderRadius: 8,
+                              background: snapshot.isDragging
+                                ? "#e6f7ff"
+                                : "white",
+                            }}
+                            actions={[
+                              <EyeOutlined key="view" onClick={() => handleViewTodo(todo)} />,
+                              <EditOutlined key="edit" onClick={() => handleEditTodo(todo)} />,
+                              <DeleteOutlined
+                                key="delete"
+                                onClick={() => handleDeleteTodo(todo._id, todo.title)}
+                              />,
+                            ]}
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <Card.Meta
+                              avatar={
+                                <Avatar
+                                  src={todo.userId?.profileImage}
+                                  icon={<UserOutlined />}
+                                />
+                              }
+                              title={
+                                <div>
+                                  {todo.title}
+                                  {isOverdue(todo.dueDate, todo.status) && (
+                                    <Tag color="red" style={{ marginLeft: 8 }}>
+                                      OVERDUE
+                                    </Tag>
+                                  )}
+                                </div>
+                              }
+                              description={
+                                <div>
+                                  <Tag color={getPriorityColor(todo.priority)}>
+                                    {todo.priority}
+                                  </Tag>
+                                  <Tag color={getCategoryColor(todo.category)}>
+                                    {todo.category}
+                                  </Tag>
+                                  <div style={{ fontSize: 12, marginTop: 4 }}>
+                                    Due: {dayjs(todo.dueDate).format("MMM DD, YYYY")}
+                                  </div>
+                                </div>
+                              }
+                            />
+                          </Card>
+                        )}
+                      </Draggable>
+                    ))}
+                  {provided.placeholder}
+                </Card>
+              )}
+            </Droppable>
+          </Col>
+        ))}
+      </Row>
+    </DragDropContext>
+  );
+};
+
+
   return (
     <div className="admin-todos">
       <Title level={2}>All Todos</Title>
+
+      <div style={{ marginBottom: 16 }}>
+  <Space>
+    <Button 
+      type={viewType === "table" ? "primary" : "default"} 
+      onClick={() => setViewType("table")}
+    >
+      Table View
+    </Button>
+    <Button 
+      type={viewType === "board" ? "primary" : "default"} 
+      onClick={() => setViewType("board")}
+    >
+      Board View
+    </Button>
+  </Space>
+</div>
+
 
       {/* Filters */}
       <Card style={{ marginBottom: 24 }}>
@@ -373,6 +557,8 @@ const AdminTodos = () => {
             />
           </Col>
           
+
+
           <Col xs={12} sm={4} md={3}>
             <Select
               placeholder="Status"
@@ -425,36 +611,39 @@ const AdminTodos = () => {
       </Card>
 
       {/* Todos Table */}
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={todos}
-          rowKey="_id"
-          loading={loading}
-          pagination={false}
-          scroll={{ x: 1000 }}
-          rowClassName={(record) => 
-            isOverdue(record.dueDate, record.status) ? 'overdue-row' : ''
+   {viewType === "table" ? (
+  <Card>
+    <Table
+      columns={columns}
+      dataSource={todos}
+      rowKey="_id"
+      loading={loading}
+      pagination={false}
+      scroll={{ x: 1000 }}
+      rowClassName={(record) => 
+        isOverdue(record.dueDate, record.status) ? "overdue-row" : ""
+      }
+    />
+    {pagination.total > 0 && (
+      <div style={{ marginTop: 16, textAlign: "center" }}>
+        <Pagination
+          current={pagination.current}
+          total={pagination.total}
+          pageSize={pagination.pageSize}
+          onChange={handlePageChange}
+          showSizeChanger
+          showQuickJumper
+          showTotal={(total, range) => 
+            `${range[0]}-${range[1]} of ${total} todos`
           }
         />
+      </div>
+    )}
+  </Card>
+) : (
+  renderBoardView()
+)}
 
-        {/* Pagination */}
-        {pagination.total > 0 && (
-          <div style={{ marginTop: 16, textAlign: 'center' }}>
-            <Pagination
-              current={pagination.current}
-              total={pagination.total}
-              pageSize={pagination.pageSize}
-              onChange={handlePageChange}
-              showSizeChanger
-              showQuickJumper
-              showTotal={(total, range) => 
-                `${range[0]}-${range[1]} of ${total} todos`
-              }
-            />
-          </div>
-        )}
-      </Card>
 
       {/* View Todo Modal */}
       <Modal
@@ -649,5 +838,8 @@ const AdminTodos = () => {
     </div>
   );
 };
+
+
+
 
 export default AdminTodos;
