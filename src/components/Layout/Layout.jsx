@@ -14,7 +14,7 @@ import {
   BarChartOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/authContext';
 import './Layout.scss';
 
 const { Header, Sider, Content } = AntLayout;
