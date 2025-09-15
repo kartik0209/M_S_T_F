@@ -14,8 +14,8 @@ import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminUsers from './pages/Admin/AdminUser';
 import AdminTodos from './pages/Admin/AdminTodo';
 import AdminReports from './pages/Admin/AdminReports';
-//import './App.scss';
-
+import './App.scss';
+import Profile from './pages/Profile/Profile';
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
@@ -55,6 +55,7 @@ function AppContent() {
           <Route path="today" element={<TodayTodos />} />
           <Route path="completed" element={<CompletedTodos />} />
           <Route path="overdue" element={<OverdueTodos />} />
+                 <Route path="profile" element={<Profile />} />
           <Route path="admin" element={
             <AdminRoute>
               <AdminDashboard />

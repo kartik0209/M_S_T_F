@@ -11,7 +11,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
-
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,14 +31,9 @@ const Layout = () => {
       key: '1',
       icon: <UserOutlined />,
       label: 'Profile',
-      onClick: () => console.log('Profile clicked')
+      onClick: () => navigate('/profile')
     },
-    {
-      key: '2',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      onClick: () => console.log('Settings clicked')
-    },
+
     { type: 'divider' },
     {
       key: '3',
@@ -48,7 +43,8 @@ const Layout = () => {
     }
   ];
 
-  const sidebarItems = [
+  // Regular user menu items
+  const userSidebarItems = [
     {
       key: '/',
       icon: <DashboardOutlined />,
@@ -73,16 +69,17 @@ const Layout = () => {
       key: '/overdue',
       icon: <ExclamationCircleOutlined />,
       label: 'Overdue'
+    },
+    { type: 'divider' },
+    {
+      key: '/profile',
+      icon: <UserOutlined />,
+      label: 'Profile'
     }
   ];
 
-  const adminItems = [
-    { type: 'divider' },
-    {
-      key: 'admin-section',
-      type: 'group',
-      label: 'Admin Panel'
-    },
+  // Admin-only menu items
+  const adminSidebarItems = [
     {
       key: '/admin',
       icon: <DashboardOutlined />,
@@ -91,7 +88,7 @@ const Layout = () => {
     {
       key: '/admin/users',
       icon: <UserOutlined />,
-      label: 'Users'
+      label: 'User Management'
     },
     {
       key: '/admin/todos',
@@ -100,14 +97,19 @@ const Layout = () => {
     },
     {
       key: '/admin/reports',
-      icon: <DashboardOutlined />,
-      label: 'Reports'
+      icon: <BarChartOutlined />,
+      label: 'Analytics & Reports'
+    },
+    { type: 'divider' },
+    {
+      key: '/profile',
+      icon: <UserOutlined />,
+      label: 'Profile'
     }
   ];
 
-  const menuItems = user?.role === 'admin' 
-    ? [...sidebarItems, ...adminItems] 
-    : sidebarItems;
+  // Determine which menu items to show based on user role
+  const menuItems = user?.role === 'admin' ? adminSidebarItems : userSidebarItems;
 
   const handleMenuClick = ({ key }) => {
     navigate(key);
@@ -124,6 +126,11 @@ const Layout = () => {
       >
         <div className="logo">
           <Text strong>{collapsed ? 'T' : 'TodoApp'}</Text>
+          {user?.role === 'admin' && !collapsed && (
+            <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+              Admin Panel
+            </div>
+          )}
         </div>
         <Menu
           theme="light"
@@ -142,6 +149,11 @@ const Layout = () => {
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
             />
+            {user?.role === 'admin' && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Administrator Mode
+              </Text>
+            )}
           </Space>
           
           <Space className="header-right">
@@ -152,7 +164,12 @@ const Layout = () => {
                   icon={<UserOutlined />} 
                   size="small"
                 />
-                <Text>{user?.username}</Text>
+                <div>
+                  <Text>{user?.username}</Text>
+                  {user?.role === 'admin' && (
+                    <div style={{ fontSize: '10px', color: '#666' }}>Admin</div>
+                  )}
+                </div>
               </Space>
             </Dropdown>
           </Space>

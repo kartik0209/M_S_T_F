@@ -17,7 +17,11 @@ const TodoForm = ({
   useEffect(() => {
     if (todo) {
       form.setFieldsValue({
-        ...todo,
+        title: todo.title,
+        description: todo.description,
+        category: todo.category,
+        priority: todo.priority,
+        status: todo.status,
         dueDate: todo.dueDate ? dayjs(todo.dueDate) : null
       });
     } else {
@@ -29,8 +33,9 @@ const TodoForm = ({
     try {
       const formattedValues = {
         ...values,
-        dueDate: values.dueDate.toISOString()
+        dueDate: values.dueDate ? values.dueDate.toISOString() : null
       };
+      
       await onSubmit(formattedValues);
       form.resetFields();
       onClose();
@@ -39,14 +44,20 @@ const TodoForm = ({
     }
   };
 
+  const handleCancel = () => {
+    form.resetFields();
+    onClose();
+  };
+
   return (
     <Modal
       title={todo ? 'Edit Todo' : 'Add New Todo'}
       open={open}
-      onCancel={onClose}
+      onCancel={handleCancel}
       onOk={form.submit}
       confirmLoading={loading}
       destroyOnClose
+      width={600}
     >
       <Form
         form={form}
@@ -54,6 +65,51 @@ const TodoForm = ({
         onFinish={handleSubmit}
         autoComplete="off"
       >
+        <Form.Item
+          name="title"
+          label="Title"
+          rules={[
+            { required: true, message: 'Please enter todo title!' },
+            { max: 200, message: 'Title cannot exceed 200 characters!' }
+          ]}
+        >
+          <Input 
+            placeholder="Enter todo title"
+            maxLength={200}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="description"
+          label="Description"
+          rules={[
+            { max: 1000, message: 'Description cannot exceed 1000 characters!' }
+          ]}
+        >
+          <TextArea 
+            placeholder="Enter todo description (optional)"
+            rows={4}
+            maxLength={1000}
+            showCount
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="dueDate"
+          label="Due Date"
+          rules={[
+            { required: true, message: 'Please select due date!' }
+          ]}
+        >
+          <DatePicker 
+            showTime={{ format: 'HH:mm' }}
+            format="YYYY-MM-DD HH:mm"
+            placeholder="Select due date and time"
+            style={{ width: '100%' }}
+          />
+        </Form.Item>
+
         <Form.Item
           name="category"
           label="Category"
@@ -106,4 +162,3 @@ const TodoForm = ({
 };
 
 export default TodoForm;
-         

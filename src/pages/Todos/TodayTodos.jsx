@@ -27,6 +27,42 @@ const TodayTodos = () => {
         setTodos(response.data.todos);
       }
     } catch (error) {
+      message.error('Failed to fetch today\'s todos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTodo = async (todoData) => {
+    try {
+      setActionLoading(true);
+      const response = await apiService.createTodo(todoData);
+      if (response.success) {
+        message.success('Todo created successfully');
+        fetchTodayTodos(); // Refresh today's todos
+      }
+    } catch (error) {
+      message.error('Failed to create todo');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEditTodo = (todo) => {
+    setSelectedTodo(todo);
+    setTodoFormOpen(true);
+  };
+
+  const handleUpdateTodo = async (todoData) => {
+    try {
+      setActionLoading(true);
+      const response = await apiService.updateTodo(selectedTodo._id, todoData);
+      if (response.success) {
+        message.success('Todo updated successfully');
+        fetchTodayTodos();
+        setSelectedTodo(null);
+      }
+    } catch (error) {
       message.error('Failed to update todo');
     } finally {
       setActionLoading(false);

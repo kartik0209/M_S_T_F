@@ -1,0 +1,337 @@
+// App.scss
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+// Auth.scss
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.demo-credentials {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+}
+
+.demo-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Layout.scss
+.layout {
+  min-height: 100vh;
+}
+
+.layout-sider {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+.logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1890ff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.layout-header {
+  background: #fff;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+}
+
+.layout-content {
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: calc(100vh - 64px);
+}
+
+// Todo.scss
+.todo-list {
+  display: grid;
+  gap: 16px;
+}
+
+.todo-card {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &.completed {
+    opacity: 0.8;
+  }
+
+  &.overdue {
+    border-left: 4px solid #ff4d4f;
+  }
+}
+
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.todo-title {
+  margin: 0 !important;
+  flex: 1;
+}
+
+.todo-description {
+  display: block;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.todo-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.todo-meta {
+  flex: 1;
+}
+
+.todo-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Dashboard.scss
+.dashboard {
+  .stats-row {
+    margin-bottom: 24px;
+  }
+
+  .progress-row {
+    margin-bottom: 24px;
+  }
+
+  .charts-row {
+    margin-bottom: 24px;
+  }
+
+  .todos-row {
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+    }
+  }
+
+  .no-data {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    color: #999;
+    font-size: 16px;
+  }
+}
+
+.filters-card {
+  margin-bottom: 24px;
+}
+
+// Admin.scss
+.admin-dashboard {
+  .stats-row {
+    margin-bottom: 24px;
+
+    .stat-extra {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+  }
+
+  .charts-row {
+    margin-bottom: 24px;
+  }
+
+  .no-data {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    color: #999;
+    font-size: 16px;
+  }
+}
+
+.todos-page {
+  .page-header {
+    margin-bottom: 24px;
+  }
+
+  .filters-card {
+    margin-bottom: 24px;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .layout-content {
+    padding: 16px;
+  }
+
+  .todo-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .todo-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .todo-actions {
+    justify-content: flex-end;
+  }
+}
+
+// Ant Design Overrides
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-btn-primary {
+  border-radius: 6px;
+}
+
+.ant-input {
+  border-radius: 6px;
+}
+
+.ant-select .ant-select-selector {
+  border-radius: 6px;
+}
+
+.ant-card-actions {
+  background: #fafafa;
+}
+
+// Custom scrollbar
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

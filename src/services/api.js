@@ -90,7 +90,7 @@ class ApiService {
     return response.data;
   }
 
-  // User endpoints
+  // User/Profile endpoints
   async updateProfile(userData) {
     const response = await this.api.put('/users/profile', userData);
     return response.data;
@@ -107,6 +107,16 @@ class ApiService {
 
   async getUserStats() {
     const response = await this.api.get('/users/stats');
+    return response.data;
+  }
+
+  async changePassword(passwordData) {
+    const response = await this.api.put('/users/password', passwordData);
+    return response.data;
+  }
+
+  async deleteAccount() {
+    const response = await this.api.delete('/users/account');
     return response.data;
   }
 

@@ -164,14 +164,36 @@ const AdminReports = () => {
         </Row>
         
 <Col xs={24} sm={12} md={6}>
-  <Card>
-    <Statistic
-      title="Total Todos"
-      value={performanceMetrics.totalTodos}
-      prefix={<UnorderedListOutlined />}
-    />
-  </Card>
-</Col>
+          <Card>
+            <Statistic
+              title="Total Todos"
+              value={performanceMetrics.totalTodos}
+              prefix={<UnorderedListOutlined />}
+            />
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Completion Rate"
+              value={performanceMetrics.completionRate}
+              suffix="%"
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Avg Tasks/User (7d)"
+              value={performanceMetrics.avgTasksLast7Days}
+              precision={1}
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
 
       {/* Productivity Trends Chart */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
