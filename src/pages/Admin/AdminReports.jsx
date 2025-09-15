@@ -195,6 +195,20 @@ const AdminReports = () => {
           </Card>
         </Col>
 
+   
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Total Users"
+              value={performanceMetrics.totalUsers}
+              prefix={<UserOutlined />}
+            />
+            <div style={{ fontSize: '12px', color: '#666', marginTop: 8 }}>
+              {performanceMetrics.activeUsers} active users
+            </div>
+          </Card>
+        </Col>
+
       {/* Productivity Trends Chart */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={24}>

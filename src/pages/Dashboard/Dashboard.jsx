@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Row, 
   Col, 
@@ -17,7 +17,7 @@ import {
   ExclamationCircleOutlined,
   CalendarOutlined 
 } from '@ant-design/icons';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import apiService from '../../services/api';
 import TodoForm from '../../components/Todo/TodoForm';
 import TodoList from '../../components/Todo/TodoList';
@@ -58,7 +58,7 @@ const Dashboard = () => {
       if (todayResponse.success) {
         setTodayTodos(todayResponse.data.todos);
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to fetch dashboard data');
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ const Dashboard = () => {
         message.success('Todo created successfully');
         fetchDashboardData();
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to create todo');
     } finally {
       setActionLoading(false);
@@ -94,7 +94,7 @@ const Dashboard = () => {
         fetchDashboardData();
         setSelectedTodo(null);
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to update todo');
     } finally {
       setActionLoading(false);
@@ -109,7 +109,7 @@ const Dashboard = () => {
         message.success('Todo deleted successfully');
         fetchDashboardData();
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to delete todo');
     } finally {
       setActionLoading(false);
@@ -124,7 +124,7 @@ const Dashboard = () => {
         message.success('Todo status updated');
         fetchDashboardData();
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to update todo status');
     } finally {
       setActionLoading(false);
@@ -139,22 +139,36 @@ const Dashboard = () => {
     );
   }
 
-  const completionRate = stats?.summary?.total > 0 
-    ? Math.round((stats.summary.completed / stats.summary.total) * 100) 
-    : 0;
+  let completionRate = 0;
+  if (stats?.summary?.total > 0) {
+    completionRate = Math.round((stats.summary.completed / stats.summary.total) * 100);
+  }
 
   const categoryChartData = stats?.categoryStats?.map(item => ({
     name: item._id,
     value: item.count
   })) || [];
+  const priorityChartData = stats?.priorityStats?.map(item => {
+    let fillColor;
+    if (item._id === 'High') {
+      fillColor = '#ff4d4f';
+    } else if (item._id === 'Medium') {
+      fillColor = '#faad14';
+    } else {
+      fillColor = '#52c41a';
+// Removed unused handleGroupChange function
+    setLoading(true);
+    const response = await apiService.getTodosByGroup(group);
+    if (response.success) {
+      setTodos(response.data.todos);
+    }
+  } catch (error) {
+    message.error('Failed to fetch grouped todos');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const priorityChartData = stats?.priorityStats?.map(item => ({
-    name: item._id,
-    value: item.count,
-    fill: item._id === 'High' ? '#ff4d4f' : item._id === 'Medium' ? '#faad14' : '#52c41a'
-  })) || [];
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   return (
     <div className="dashboard">
@@ -219,12 +233,18 @@ const Dashboard = () => {
           <Card title="Completion Rate">
             <Progress 
               percent={completionRate} 
-              status={completionRate > 70 ? 'success' : completionRate > 40 ? 'normal' : 'exception'}
+            <Progress 
+              percent={completionRate} 
+              status={
+                completionRate > 70
+                  ? 'success'
+                  : completionRate > 40
+                  ? 'normal'
+                  : 'exception'
+              }
               strokeWidth={12}
               format={percent => `${percent}%`}
             />
-          </Card>
-        </Col>
       </Row>
 
       {/* Charts */}
@@ -239,9 +259,9 @@ const Dashboard = () => {
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    {categoryChartData.map((entry) => (
+                      <Cell key={entry.name} fill={COLORS[categoryChartData.findIndex(e => e.name === entry.name) % COLORS.length]} />
+                    ))}
                   >
                     {categoryChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -298,7 +318,8 @@ const Dashboard = () => {
               onStatusChange={handleStatusChange}
               loading={actionLoading}
             />
-          </Card>
+            </Card>
+      {/* Todo Form Modal - Completed */}
         </Col>
       </Row>
 

@@ -133,6 +133,15 @@ const AdminDashboard = () => {
 
       {/* Summary Statistics */}
       <Row gutter={[16, 16]} className="stats-row">
+
+          <Button 
+          type="primary" 
+          icon={<PlusOutlined />}
+          onClick={() => setTodoFormOpen(true)}
+          size="large"
+        >
+          Add Todo
+        </Button>
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic

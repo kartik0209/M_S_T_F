@@ -7,6 +7,7 @@ import {
   ClockCircleOutlined,
   ExclamationCircleOutlined
 } from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 //import './Todo.scss';
 
@@ -124,6 +125,12 @@ const TodoList = ({
                 <Tag color={getCategoryColor(todo.category)}>
                   {todo.category}
                 </Tag>
+                {/* Assignment indicator */}
+                {todo.assignedBy && (
+                  <Tag icon={<UserOutlined />} color="blue">
+                    Assigned by: {todo.assignedBy.username}
+                  </Tag>
+                )}
               </Space>
             </div>
 
@@ -132,6 +139,14 @@ const TodoList = ({
                 {todo.description}
               </Text>
             )}
+
+
+            {todo.assignedBy && (
+  <Tag icon={<UserOutlined />} color="blue">
+    Assigned by: {todo.assignedBy.username}
+  </Tag>
+)}
+
 
             <div className="todo-footer">
               <div className="todo-meta">

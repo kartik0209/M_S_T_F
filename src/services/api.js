@@ -125,6 +125,29 @@ class ApiService {
     const response = await this.api.get('/admin/dashboard');
     return response.data;
   }
+// Admin assignment functionality
+async assignTodoToUser(todoData) {
+  const response = await this.api.post('/admin/assign-todo', todoData);
+  return response.data;
+}
+
+// Get users for assignment dropdown
+async getUsersForAssignment() {
+  const response = await this.api.get('/admin/users-for-assignment');
+  return response.data;
+}
+
+// Get todos by group (enhanced grouping)
+async getTodosByGroup(group) {
+  const response = await this.api.get(`/todos/group/${group}`);
+  return response.data;
+}
+
+// Search todos
+async searchTodos(params) {
+  const response = await this.api.get('/todos/search', { params });
+  return response.data;
+}
 
   async getAdminUsers(params = {}) {
     const response = await this.api.get('/admin/users', { params });

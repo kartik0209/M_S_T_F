@@ -142,6 +142,37 @@ const AllTodos = () => {
     }
   };
 
+  // Update the search handling in AllTodos.jsx
+const handleSearch = async (searchQuery) => {
+  if (!searchQuery.trim()) {
+    fetchTodos();
+    return;
+  }
+  setFilters(prev => ({ ...prev, search: searchQuery }));
+  setPagination(prev => ({ ...prev, current: 1 }));
+  try {
+    setLoading(true);
+    const response = await apiService.searchTodos({ 
+      q: searchQuery,
+      page: 1,
+      limit: pagination.pageSize 
+    });
+    
+    if (response.success) {
+      setTodos(response.data.todos);
+      setPagination(prev => ({
+        ...prev,
+        total: response.data.pagination.total,
+        current: 1
+      }));
+    }
+  } catch (error) {
+    message.error('Failed to search todos');
+  } finally {
+    setLoading(false);
+  }
+};
+
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, current: 1 }));
@@ -180,13 +211,18 @@ const AllTodos = () => {
       <Card className="filters-card" bodyStyle={{ padding: 16 }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={8} md={6}>
-            <Input
-              placeholder="Search todos..."
-              prefix={<SearchOutlined />}
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              allowClear
-            />
+          <Col xs={24} sm={8} md={6}>
+  <Input.Search
+    placeholder="Search todos..."
+    prefix={<SearchOutlined />}
+    value={filters.search}
+    onChange={(e) => handleFilterChange('search', e.target.value)}
+    onSearch={handleSearch}
+    allowClear
+    enterButton
+  />
+</Col>
+
           </Col>
           
           <Col xs={12} sm={4} md={3}>
