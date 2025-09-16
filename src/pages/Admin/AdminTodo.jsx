@@ -18,7 +18,8 @@ import {
   DatePicker,
   Descriptions,
   Divider,
-  Dropdown
+  Dropdown,
+  Checkbox
 } from 'antd';
 import {
   UserOutlined,
@@ -61,7 +62,8 @@ const AdminTodos = () => {
   const [selectedTodo, setSelectedTodo] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [form] = Form.useForm();
-const [viewType, setViewType] = useState("table"); // "table" | "board"
+  const [viewType, setViewType] = useState("table"); // "table" | "board"
+  const [checkboxLoading, setCheckboxLoading] = useState({}); // Track loading state for individual checkboxes
 
   useEffect(() => {
     fetchTodos();
@@ -98,6 +100,56 @@ const [viewType, setViewType] = useState("table"); // "table" | "board"
     }
   };
 
+  // Handle checkbox change for task completion
+  const handleCheckboxChange = async (todoId, checked) => {
+    setCheckboxLoading(prev => ({ ...prev, [todoId]: true }));
+    
+    try {
+      const newStatus = checked ? 'completed' : 'pending';
+      const updateData = {
+        status: newStatus,
+        completed: checked
+      };
+
+      // Optimistically update the UI
+      setTodos(prev =>
+        prev.map(todo =>
+          todo._id === todoId 
+            ? { ...todo, status: newStatus, completed: checked }
+            : todo
+        )
+      );
+
+      const response = await apiService.updateTodo(todoId, updateData);
+      
+      if (response.success) {
+        message.success(checked ? 'Task marked as completed!' : 'Task marked as pending!');
+      } else {
+        // Revert optimistic update if API call failed
+        setTodos(prev =>
+          prev.map(todo =>
+            todo._id === todoId 
+              ? { ...todo, status: checked ? 'pending' : 'completed', completed: !checked }
+              : todo
+          )
+        );
+        message.error('Failed to update task status');
+      }
+    } catch (error) {
+      // Revert optimistic update if API call failed
+      setTodos(prev =>
+        prev.map(todo =>
+          todo._id === todoId 
+            ? { ...todo, status: checked ? 'pending' : 'completed', completed: !checked }
+            : todo
+        )
+      );
+      message.error('Failed to update task status');
+      console.error('Update task status error:', error);
+    } finally {
+      setCheckboxLoading(prev => ({ ...prev, [todoId]: false }));
+    }
+  };
 
 const handleDragEnd = async (result) => {
   const { source, destination, draggableId } = result;
@@ -126,13 +178,20 @@ const handleDragEnd = async (result) => {
   const draggedTodoIndex = newTodos.findIndex(todo => todo._id === draggableId);
   
   // Update the status of the dragged todo
-  newTodos[draggedTodoIndex] = { ...newTodos[draggedTodoIndex], status: newStatus };
+  newTodos[draggedTodoIndex] = { 
+    ...newTodos[draggedTodoIndex], 
+    status: newStatus,
+    completed: newStatus === 'completed'
+  };
   
   // Optimistically update the state for a smooth UI
   setTodos(newTodos);
 
   // Call the API to update the status on the backend
-  const success = await onStatusChange(draggableId, { status: newStatus });
+  const success = await onStatusChange(draggableId, { 
+    status: newStatus, 
+    completed: newStatus === 'completed' 
+  });
   
   // If API call fails, revert the state
   if (!success) {
@@ -161,12 +220,19 @@ const handleDrop = async (e, newStatus) => {
   // Optimistic update
   setTodos(prev =>
     prev.map(todo =>
-      todo._id === todoId ? { ...todo, status: newStatus } : todo
+      todo._id === todoId ? { 
+        ...todo, 
+        status: newStatus,
+        completed: newStatus === 'completed'
+      } : todo
     )
   );
 
   // Call API
-  const success = await onStatusChange(todoId, { status: newStatus });
+  const success = await onStatusChange(todoId, { 
+    status: newStatus,
+    completed: newStatus === 'completed'
+  });
   if (!success) {
     fetchTodos(); // revert if failed
   }
@@ -329,13 +395,31 @@ const onStatusChange = async (todoId, updateData) => {
 
   const columns = [
     {
+      title: '',
+      key: 'checkbox',
+      width: 50,
+      render: (_, record) => (
+        <Checkbox
+          checked={record.status === 'completed' || record.completed}
+          onChange={(e) => handleCheckboxChange(record._id, e.target.checked)}
+          loading={checkboxLoading[record._id]}
+        />
+      ),
+    },
+    {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
       ellipsis: true,
       render: (text, record) => (
         <div>
-          <Text strong={record.status !== 'completed'}>
+          <Text 
+            strong={record.status !== 'completed'}
+            style={{
+              textDecoration: record.status === 'completed' ? 'line-through' : 'none',
+              color: record.status === 'completed' ? '#999' : 'inherit'
+            }}
+          >
             {text}
           </Text>
           {isOverdue(record.dueDate, record.status) && (
@@ -487,8 +571,10 @@ const renderBoardView = () => {
                     borderRadius: 8,
                     cursor: "grab",
                     background: "white",
+                    opacity: todo.status === 'completed' ? 0.8 : 1,
                   }}
                   actions={[
+                   
                     <EyeOutlined key="view" onClick={() => handleViewTodo(todo)} />,
                     <EditOutlined key="edit" onClick={() => handleEditTodo(todo)} />,
                     <DeleteOutlined
@@ -506,7 +592,12 @@ const renderBoardView = () => {
                     }
                     title={
                       <div>
-                        {todo.title}
+                        <span style={{
+                          textDecoration: todo.status === 'completed' ? 'line-through' : 'none',
+                          color: todo.status === 'completed' ? '#999' : 'inherit'
+                        }}>
+                          {todo.title}
+                        </span>
                         {isOverdue(todo.dueDate, todo.status) && (
                           <Tag color="red" style={{ marginLeft: 8 }}>
                             OVERDUE
@@ -637,9 +728,16 @@ const renderBoardView = () => {
       loading={loading}
       pagination={false}
       scroll={{ x: 1000 }}
-      rowClassName={(record) => 
-        isOverdue(record.dueDate, record.status) ? "overdue-row" : ""
-      }
+      rowClassName={(record) => {
+        let className = '';
+        if (isOverdue(record.dueDate, record.status)) {
+          className += 'overdue-row ';
+        }
+        if (record.status === 'completed') {
+          className += 'completed-row ';
+        }
+        return className.trim();
+      }}
     />
     {pagination.total > 0 && (
       <div style={{ marginTop: 16, textAlign: "center" }}>
@@ -682,6 +780,23 @@ const renderBoardView = () => {
       >
         {selectedTodo && (
           <div>
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Checkbox
+                checked={selectedTodo.status === 'completed' || selectedTodo.completed}
+                onChange={(e) => {
+                  handleCheckboxChange(selectedTodo._id, e.target.checked);
+                  setSelectedTodo(prev => ({ 
+                    ...prev, 
+                    status: e.target.checked ? 'completed' : 'pending',
+                    completed: e.target.checked
+                  }));
+                }}
+                loading={checkboxLoading[selectedTodo._id]}
+              >
+                Mark as {selectedTodo.status === 'completed' ? 'Incomplete' : 'Complete'}
+              </Checkbox>
+            </div>
+            
             <Descriptions title={selectedTodo.title} bordered column={2}>
               <Descriptions.Item label="Description" span={2}>
                 {selectedTodo.description || 'No description provided'}
@@ -844,19 +959,11 @@ const renderBoardView = () => {
               </Row>
             </Form>
           </div>
+                
         )}
       </Modal>
-
-      <style jsx>{`
-        .overdue-row {
-          background-color: #fff2f0 !important;
-        }
-      `}</style>
     </div>
   );
-};
-
-
-
+}
 
 export default AdminTodos;
