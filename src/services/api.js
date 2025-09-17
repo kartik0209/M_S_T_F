@@ -80,6 +80,17 @@ class ApiService {
     return response.data;
   }
 
+  
+async addUser(userData) {
+  const response = await this.api.post('/admin/users', userData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+}
+
+
   async getTodaysTodos() {
     const response = await this.api.get('/todos/today');
     return response.data;

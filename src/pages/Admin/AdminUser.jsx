@@ -16,7 +16,8 @@ import {
   Statistic,
   Row,
   Col,
-  Spin
+  Spin,
+  Upload
 } from 'antd';
 import {
   UserOutlined,
@@ -50,6 +51,8 @@ const AdminUsers = () => {
 const [viewModalOpen, setViewModalOpen] = useState(false);
 const [viewUserData, setViewUserData] = useState(null);
 const [viewLoading, setViewLoading] = useState(false);
+const [addModalOpen, setAddModalOpen] = useState(false);
+const [addForm] = Form.useForm();
 
   useEffect(() => {
     fetchUsers();
@@ -89,6 +92,39 @@ const [viewLoading, setViewLoading] = useState(false);
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, current: 1 }));
   };
+const handleAddUser = async (values) => {
+  try {
+    setActionLoading(true);
+    
+    const formData = new FormData();
+    formData.append('username', values.username);
+    formData.append('email', values.email);
+    formData.append('password', values.password);
+    formData.append('role', values.role);
+    
+    if (values.image && values.image.file) {
+      formData.append('image', values.image.file);
+    }
+    
+    const response = await apiService.addUser(formData);
+    
+    if (response.success) {
+      message.success('User added successfully');
+      setAddModalOpen(false);
+      addForm.resetFields();
+      fetchUsers();
+    }
+  } catch (error) {
+    message.error('Failed to add user');
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+
+
+
+
 
   const handlePageChange = (page, pageSize) => {
     setPagination(prev => ({ ...prev, current: page, pageSize }));
@@ -252,7 +288,16 @@ const [viewLoading, setViewLoading] = useState(false);
 
   return (
     <div className="admin-users">
-      <Title level={2}>User Management</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+  <Title level={2}>User Management dffdf</Title>
+  <Button 
+    type="primary" 
+    onClick={() => setAddModalOpen(true)}
+    style={{ marginBottom: 0 }}
+  >
+    Add User
+  </Button>
+</div>
 
       {/* Filters */}
       <Card style={{ marginBottom: 24 }}>
@@ -471,6 +516,97 @@ const [viewLoading, setViewLoading] = useState(false);
     </div>
   )}
 </Modal>
+
+
+
+<Modal
+  title="Add New User"
+  open={addModalOpen}
+  onCancel={() => {
+    setAddModalOpen(false);
+    addForm.resetFields();
+  }}
+  onOk={addForm.submit}
+  confirmLoading={actionLoading}
+  width={500}
+>
+  <Form
+    form={addForm}
+    layout="vertical"
+    onFinish={handleAddUser}
+  >
+    <Form.Item
+      name="username"
+      label="Username"
+      rules={[{ required: true, message: 'Please enter username!' }]}
+    >
+      <Input placeholder="Enter username" />
+    </Form.Item>
+
+    <Form.Item
+      name="email"
+      label="Email"
+      rules={[
+        { required: true, message: 'Please enter email!' },
+        { type: 'email', message: 'Please enter valid email!' }
+      ]}
+    >
+      <Input placeholder="Enter email address" />
+    </Form.Item>
+
+    <Form.Item
+      name="password"
+      label="Password"
+      rules={[
+        { required: true, message: 'Please enter password!' },
+        { min: 6, message: 'Password must be at least 6 characters!' }
+      ]}
+    >
+      <Input.Password placeholder="Enter password" />
+    </Form.Item>
+
+    <Form.Item
+      name="role"
+      label="Role"
+      rules={[{ required: true, message: 'Please select a role!' }]}
+      initialValue="user"
+    >
+      <Select>
+        <Option value="user">User</Option>
+        <Option value="admin">Admin</Option>
+      </Select>
+    </Form.Item>
+
+    <Form.Item
+      name="image"
+      label="Profile Image (Optional)"
+    >
+      <Upload
+        beforeUpload={() => false}
+        maxCount={1}
+        accept="image/*"
+        listType="picture-card"
+      >
+        <div>
+          <div style={{ marginTop: 8 }}>Upload</div>
+        </div>
+      </Upload>
+    </Form.Item>
+  </Form>
+</Modal>
+
+
+
+
+
+
+
+
+
+
+
+
+
     </div>
   );
 };
